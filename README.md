@@ -1,4 +1,4 @@
-Imaging Functions Library
+# Imaging Functions Library
 
 This is a library to apply simple to complex functions to treat, transform and
 prepare images. This library helps to prepare image data for machine learning,
@@ -32,6 +32,6 @@ OBS: some functions use libraries pynput and windsound, which some times are
 difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
-Author: Marlon Rodrigues Garcia
-Institution:  University of São Paulo
+Author: Marlon Rodrigues Garcia  
+Institution:  University of São Paulo  
 Contact: marlonrg@gmail.com
