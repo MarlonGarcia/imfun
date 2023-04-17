@@ -32,8 +32,6 @@ OBS: some functions use libraries pynput and windsound, which some times are
 difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
-@author: Marlon Rodrigues Garcia
-
-@instit.:  University of São Paulo
-
-@contact: marlonrg@gmail.com
+Author: Marlon Rodrigues Garcia
+Institution:  University of São Paulo
+Contact: marlonrg@gmail.com
