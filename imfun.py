@@ -551,7 +551,12 @@ class im2label_class(object):
 def im2label(root, classes, **kwargs):
     '''Function to create a label mask from an image.
     
-    im2label(folder, classes)
+    This function creates another folder, with the same name of root plus
+    the string "labels", and start to save the label images in this folder,
+    with the same name. Since labeling takes lot of time, this function also 
+    identify which images are not labeled before to start.
+    
+    im2label(root, classes)
     
     root: 'string'
         root directory where images are.
@@ -566,12 +571,13 @@ def im2label(root, classes, **kwargs):
         happens if 'open_roi' = 'below', with a region below the chosen points.
     **cmap: 'int' (cv2 colormap)
     **show: 'boolean'
-        If 'show' True, show the final image and its label until user press
+        If 'show' is True, show the final image and its label until user press
         'ESC', or any key.
     **equalize: 'boolean'
         If 'True', equalize grayscale image histogram.
     **color: 'toople'
-        Color of line drown.
+        Enter a different color to color the working line (R,G,B) with values
+        from 0 to 255.
     
     Mouse actions:
     - left buttom: select a new point in the label;
@@ -584,11 +590,7 @@ def im2label(root, classes, **kwargs):
     (they will belong to the last label)(if a label is chosen more than once,
     the last chosen label will be applied).
     OBS: images can be multidimensional ([hiegth,width,dimensions])
-    
-    This function creates another folder, with the same name of root plus
-    the string "labels", and start to save the label images in this folder,
-    with the same name. Since labeling takes lot of time, this function also 
-    identify which images are not labeled before to start.'''   
+    '''   
     
     classes = int(classes)
     
@@ -2523,4 +2525,3 @@ def good_colormaps(image):
     plt.tight_layout()
     plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95,
                         hspace=0.15, wspace=0.15)
-
