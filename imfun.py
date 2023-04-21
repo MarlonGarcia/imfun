@@ -432,7 +432,7 @@ class im2label_class(object):
     # This function is to really 'run' the 'choose_points1' class:
     def run(self, image, label, cmap, w, h, dim, img_type, color):
         # Stating a window_name for opencv
-        window_name = 'Choose a region for label ' + str(label+1)
+        window_name = 'Choose a region for label ' + str(label)
         
         # Separating if we use or not a colormap.
         if cmap is not None:
@@ -496,11 +496,11 @@ class im2label_class(object):
                     else:
                         zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
                 
-                # Making a 'plus' signal to help choosing region
-                zoom_in[int(w/6),int(4*h/30):int(19*h/120)] = np.uint8(zoom_in[int(w/6),int(4*h/30):int(19*h/120)]+125)
-                zoom_in[int(w/6),int(21*h/120):int(6*h/30)] = np.uint8(zoom_in[int(w/6),int(21*h/120):int(6*h/30)]+125)
-                zoom_in[int(4*w/30):int(19*w/120),int(h/6)] = np.uint8(zoom_in[int(4*w/30):int(19*w/120),int(h/6)]+125)
-                zoom_in[int(21*w/120):int(6*w/30),int(h/6)] = np.uint8(zoom_in[int(21*w/120):int(6*w/30),int(h/6)]+125)
+                # Making a 'cross' signal to help choosing region
+                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
+                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
+                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
+                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
 
                 # Transforming 'zoom_in' is a zoom (it is a crop right now)
                 h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
@@ -529,11 +529,11 @@ class im2label_class(object):
                         zoom_in[:,0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
                     else:
                         zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                # Making a 'plus' signal to help choosing region
-                zoom_in[int(w/6),int(4*h/30):int(19*h/120)] = np.uint8(zoom_in[int(w/6),int(4*h/30):int(19*h/120)]+125)
-                zoom_in[int(w/6),int(21*h/120):int(6*h/30)] = np.uint8(zoom_in[int(w/6),int(21*h/120):int(6*h/30)]+125)
-                zoom_in[int(4*w/30):int(19*w/120),int(h/6)] = np.uint8(zoom_in[int(4*w/30):int(19*w/120),int(h/6)]+125)
-                zoom_in[int(21*w/120):int(6*w/30),int(h/6)] = np.uint8(zoom_in[int(21*w/120):int(6*w/30),int(h/6)]+125)
+                # Making a 'cross' signal to help choosing region
+                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
+                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
+                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
+                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
 
                 # Transforming 'zoom_in' is a zoom (it is a crop right now)
                 h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
@@ -554,7 +554,8 @@ def im2label(root, classes, **kwargs):
     This function creates another folder, with the same name of root plus
     the string "labels", and start to save the label images in this folder,
     with the same name. Since labeling takes lot of time, this function also 
-    identify which images are not labeled before to start.
+    identify which images are not labeled before to start. Final output image
+    is scaled from 0 to 255.
     
     im2label(root, classes)
     
@@ -564,18 +565,18 @@ def im2label(root, classes, **kwargs):
     classes: 'int'
         the number of classes to choose.
     
-    **open_roi: 'string'
+    **open_roi: 'string' (standard: None)
         If open_roi is not 'None', the algorithm choose open regions (regions
         that ends in the image bondary). If 'open_roi' = 'above', the chosen
         region will be an open region above the chosen area, the opposite
         happens if 'open_roi' = 'below', with a region below the chosen points.
     **cmap: 'int' (cv2 colormap)
-    **show: 'boolean'
+    **show: 'boolean' (standard: False)
         If 'show' is True, show the final image and its label until user press
         'ESC', or any key.
-    **equalize: 'boolean'
+    **equalize: 'boolean' (standard: False)
         If 'True', equalize grayscale image histogram.
-    **color: 'toople'
+    **color: 'toople' (standard: (200,200,200))
         Enter a different color to color the working line (R,G,B) with values
         from 0 to 255.
     
@@ -584,16 +585,15 @@ def im2label(root, classes, **kwargs):
     - right buttom: end selection and finish or go to another label;
     - ESC: finish selection (close the algorithm).
     
-    **OBS: When using 'open_roi', it is just possible to chose points from
+    **OBS1: When using 'open_roi', it is just possible to chose points from
     left part of the image to the right.
     OBS: The remaining unlabeled pixels will be set as the background pixels
     (they will belong to the last label)(if a label is chosen more than once,
     the last chosen label will be applied).
-    OBS: images can be multidimensional ([hiegth,width,dimensions])
+    OBS2: images can be multidimensional ([hiegth,width,dimensions])
     '''   
-    
+    # Transforming classes to integer
     classes = int(classes)
-    
     # With 'kwargs' we can define extra arguments as input.
     cmap = kwargs.get('cmap')
     open_roi = kwargs.get('open_roi')
@@ -619,6 +619,7 @@ def im2label(root, classes, **kwargs):
         for name in os.listdir(os.curdir):
             if name in image_names:
                 image_names.remove(name)
+    # Shuffling the names
     shuffle(image_names)
     # This for will iterate in each image in 'root' folder
     for image_name in image_names:
@@ -639,7 +640,7 @@ def im2label(root, classes, **kwargs):
             img_type = 'color'
             dim = np.shape(image)[2]
         # first the image label will be a '-1' array
-        if img_type == 'grey':
+        if img_type == 'gray':
             label_image = np.zeros(np.shape(image), int)-np.ones(np.shape(image), int)
         else:
             label_image = np.zeros(np.shape(image[:,:,0]), int)-np.ones(np.shape(image[:,:,0]), int)
@@ -647,12 +648,21 @@ def im2label(root, classes, **kwargs):
         w = np.shape(image)[1]
         h = np.shape(image)[0]
         # Iterate in each label (except the last one, that is background)
-        label = 0
-        while label < classes-1:
+        label = 1
+        while label < classes:
             # The '.run' class gives the chosen points
             im2label = im2label_class()
             points = im2label.run(image, label, cmap, w, h, dim, img_type, color)
             points = np.asarray(points)
+            # If no points were chosen, gives the option to label the unchosen
+            # points in the image as background
+            if len(points)<1:
+                q1 = 'Label unchosen points as background?'
+                q2 = '\n\n\'No\' will quit application (an error will eventually raised).'
+                # Answer: asw = 6 (yes), asw = 7 (no) 
+                asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
+                if asw == 6:
+                    break
             # Creating a roi to signaling the chosen region with '1'
             if img_type == 'gray':
                 roi = np.zeros(np.shape(image), np.int32)
@@ -662,9 +672,10 @@ def im2label(root, classes, **kwargs):
             if not open_roi:
                 cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
                 # Then we change the 'label_image' to 'label' when roi was chosen
-                # label_image[(roi==1) & (label_image==-1)] = label
                 label_image[roi==1] = label
-                print('not openroi')
+                # If is interesting to only change where there are no other
+                # labels assigned, use another condition as follows:
+                # label_image[(roi==1) & (label_image==-1)] = label
             elif open_roi == 'above' or open_roi == 'below':
                 # If ROI is 'above', concatenate the upper image part, but
                 # if the user choose points near to the sides, concatenate
@@ -740,22 +751,31 @@ def im2label(root, classes, **kwargs):
                 if start_points is not None:
                     points = np.concatenate((start_points,points), axis=0)
                 cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
-                # Only modificate regions where 'label_image' is -1, to 
-                # not overwrite the previously chosen label (same below).
-                # label_image[(roi==1)  & (label_image==-1)] = label
+                # Assigning 'label' where 'roi' was chosen
                 label_image[roi==1] = label
-            else: print('\nvariable \'open_roi\' has to be \'above\' or \'below\'')
+                # If is interesting to only change where there are no other
+                # labels assigned, use another condition as follows:
+                # label_image[(roi==1) & (label_image==-1)] = label
+            else:
+                raise ValueError('\nvariable \'open_roi\' has to be \'above\' or \'below\'')
             # Ask if the label was currectly chosen:
-            q1 = 'Was label '+str(label+1)+' correctly chosen?'
-            q2 = '\n\nCancel: Redo label selection!\n\nOk: Go to the next label..'
-            # Resposta: asw = 6 (sim), asw = 7 (não), 'Cancelar', asw = 2, 
-            asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 1)
-            if asw == 1:
-                label += 1
-            
-        # Assigning the last label as background.
-        label_image[label_image==-1] = classes-1
+            q1 = 'Was label '+str(label)+' correctly chosen?'
+            q2 = '\n\nSelect \'No\' to redo the labeling \n\n\'Yes\': to go forward..'
+            # Answer: asw = 6 (yes), asw = 7 (no) 
+            asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
+            if asw == 6:
+                # Ask if the user wants to choose more parts to the same label
+                q1 = 'Want to choose more points for label '+str(label)+'?'
+                q2 = '\n\nSelect \'No\' to continue.. \n\n\'Yes\': to select more labels.'
+                # Answer: asw = 6 (yes), asw = 7 (no) 
+                asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
+                if asw == 7:
+                    label += 1
+        
+        # Assigning the last label as background (label = 0).
+        label_image[label_image==-1] = 0
         label_image = np.array(label_image, np.uint8)
+        label_image = scale255(label_image)
         # If 'show' = True
         if show:
             fig, ax = plt.subplots(1,2)
