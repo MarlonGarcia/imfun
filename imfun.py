@@ -950,11 +950,39 @@ def scale255(image):
     '''
     Function to scale the image to the range [0,255]
     
+    image_out = scale255(image)
+    
+    input:
     'image' (np.array): image to be rescaled
-    return (np.array): rescaled image
+    
+    output:
+    image_out (np.array, np.uint8): rescaled image
+    
+    OBS: Image should be of shape (H, W, C), where H is the height, W is the
+    width and C is the number of channels, for multichannel images.
     '''
-    image = image - np.min(image)
-    image = image*(255/np.max(image))
+    # Discovering if the image is grayscale or colorful
+    if len(np.shape(image)) == 2:
+        img_type = 'gray'
+    # We use '>=3' to accounts for multichannel images
+    elif len(np.shape(image)) >= 3:
+        img_type = 'color'
+    else:
+        raise ValueError('Image has to be at least a 2D array, but '+
+                         str(len(np.shape(image)))+'D array was given.')
+    if img_type == 'gray':
+        image = image - np.min(image)
+        if np.max(image) != 0:
+            image = image*(255/np.max(image))
+    elif img_type == 'color':
+        for n in range(len(np.shape(image))):
+            image[:,:,n] = image[:,:,n] - np.min(image[:,:,n])
+            if np.max(image[:,:,n]) != 0:
+                image[:,:,n] = image[:,:,n]*(255/np.max(image[:,:,n]))
+    else:
+        raise ValueError('Image type was not recognized, see the'+
+                         ' see the documentation for more information.')
+    
     image = np.array(image, np.uint8)
     
     return image
