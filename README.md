@@ -33,5 +33,5 @@ difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
 Author: Marlon Rodrigues Garcia  
-Institution:  University of São Paulo  
+Institution:  State University of São Paulo  
 Contact: marlonrg@gmail.com
