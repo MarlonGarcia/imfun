@@ -35,7 +35,7 @@ difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
 @author: Marlon Rodrigues Garcia
-@instit.:  University of São Paulo
+@instit.:  State University of São Paulo
 @contact: marlonrg@gmail.com"""
 
 import numpy as np
@@ -51,7 +51,9 @@ import ctypes
 from pynput import keyboard   # It does not worked on colabs
 from random import shuffle
 from scipy import fftpack     # to apply FFT and iFFT
-
+from scipy import signal
+from scipy.fft import fft, fftfreq
+from scipy.interpolate import interp1d
 
 
 def load_gray_images(folder,colormap):
@@ -1651,6 +1653,92 @@ def crop_poly_multiple(images, **kwargs):
 
 
 
+def filter_finder(x, y, **kwargs):
+    '''
+    Function to study which filter to use for a signal y(x)
+    
+    output = filter_finder(x, y, **kwargs)
+    
+    inputs:
+    show (string): operation mode, to choose what the function will plot. If
+    'time' is chosen, this function compare the original signal with filtered
+    one in the time domain (or in whatherver domain the original signal is). If
+    'frequency' is chosen, the signal and filter spectra are compared. If
+    'interpolation' is chosen, the original signal is compared with the inter-
+    polated one for visualization. Standard value is 'time'.
+    N (int): the number of points to be used in FFT and 'x' interpolation.
+    fs (int): frequency of sampling
+    Wn (int): critical frequency
+    order (int): filter order
+    
+    output:
+    output (tuple): Depends on the mode. If the mode is 'frequency', return w
+    (wavelengths) and h (frequency response, to be ploted e.g. as np.abs(h)).
+    If the mode is 'time', it returns the x and the y for the filtered signal.
+    
+        
+    If show = 'frequency' compare signal and filter in the frequency domain.
+    If show = 'time' compare signal and filtered signal in the time domain.
+    If show = 'interpolation', it compares the true signal with its interpola-
+    tion (to see if interpolation is good for this signal).
+    '''
+    N = kwargs.get('N')
+    fs = kwargs.get('fs')
+    Wn = kwargs.get('Wn')
+    order = kwargs.get('order')
+    show = kwargs.get('show')
+    window = kwargs.get('window')
+    
+    if N is None:
+        N = 2**10
+    if fs is None:
+        fs = 1
+    if Wn is None:
+        Wn = 0.25
+    if order is None:
+        order = 5
+    if window is None:
+        window = signal.windows.hamming(N)
+    if show is None:
+        show = 'time'
+    # Defining 'T' as 1 over the sampling frequency 'fs'
+    T = 1/fs
+    # First interpolating the signal
+    f = interp1d(x, y)
+    x_ip = np.linspace(x[0], x[-1], N, endpoint=True)
+    y_ip = f(x_ip)
+    if show == 'interpolation':
+        plt.subplots()
+        plt.plot(x, y)
+        plt.plot(x_ip, y_ip, 'o')
+    # Calculating the FFT of the signal y(x)
+    y_w = y_ip*window
+    yf = fft(y_w)
+    yf_log = 20*np.log10(np.abs(yf[0:N//2])/np.max(np.abs(yf[0:N//2])))
+    xf = fftfreq(N, T)[:N//2]
+    # Plotting the freq. response of the signal y(x)
+    if show == 'frequency':
+        plt.subplots()
+        plt.plot(xf, yf_log)
+    # Calculating the IIR filter for this signal
+    sos = signal.iirfilter(order, Wn=Wn, fs=fs, btype='low', ftype='butter',
+                           output='sos')
+    w, h = signal.sosfreqz(sos, worN=N, fs=fs)
+    if show == 'frequency':
+        plt.plot(w, 20*np.log10(np.abs(h)), label='Filter')
+        plt.show()
+        return (w, h)
+    if show == 'time':
+        y_filt = signal.sosfiltfilt(sos, y)
+        plt.subplots()
+        plt.plot(x, y, label='Original signal')
+        plt.plot(x, y_filt, label='Filtered signal')
+        plt.legend()
+        plt.show()
+        return (x, y_filt)
+
+
+
 def highpass_gauss(img, **kwargs):
     '''
     Apply a Gaussian-based high-pass filter
@@ -1813,6 +1901,52 @@ def lowpass_fft(img, **kwargs):
                             right=0.98, hspace=0.01, wspace=0.01)
     
     return scale255(final)
+
+
+
+def filt_hist(hist):
+    '''
+    Functino to 'filter' equalized histogram, removing the zeros values 
+    between positive ones (util to process equalized historgrams).
+    
+    output = filt_hist(hist)
+    
+    input:
+    hist (np.array): input histogram to be 'filtered' (removed the zero values)
+    
+    output:
+    output (np.array): output histogram without zero values between positive
+    ones.
+    '''
+    output = np.zeros(np.shape(hist))
+    output[0] = hist[0]
+    # We go until the middle of the signal (len(hist)//2)
+    active = False
+    for n in range(1, len(hist)//2):
+        if (hist[n-1]>0) and (hist[n]==0):
+            output[n] = hist[n-1]
+            active = True
+        if hist[n]>0:
+            active = False
+        if active:
+            output[n] = output[n-1]
+        else:
+            output[n] = hist[n]
+    # Then we come back from the end to the middle, to do not make the final
+    # zero values from the spectrum becoming non-zero values by this function.
+    output[-1] = hist[-1]
+    active = False
+    for n in range(len(hist)-2, len(hist)//2-1, -1):
+        if (hist[n+1]>0) and (hist[n]==0):
+            output[n] = hist[n+1]
+            active = True
+        if hist[n]>0:
+            active = False
+        if active:
+            output[n] = output[n+1]
+        else:
+            output[n] = hist[n]
+    return output
 
 
 
