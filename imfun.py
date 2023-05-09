@@ -24,12 +24,15 @@ Examples of some more complex functions this library can perform:
 - isoareas: measure and statistics pixel's intensity by depth from a tumor
 (e.g. for a tumor slide) in a preferential directon (for example for fluore
 scence images)
-- im2label: transform an image to a segmented image label
-- crop_multiple: crop multiple images with the same cropping area.
-- polyroi: make a polygonal ROI in an image.
-- crop_poly_multiple: make polygonal ROI and replicate the same ROI in other
-images, changing its position.
+- im2label: extract imaging labels from images, e.g for machine learning
+segmentation tasks.
+- crop_multiple: crop multiple images with the same rectangular cropping area.
+- polyroi: make a polygonal crop (or region of interest) from an image.
+- crop_poly_multiple: make multiple polygonal crops (or ROIs), replicating
+an original polygonal ROI to crop other images (uses mouse interaction).
 - choose_points: choose points in an image, and retrieve its indexes.
+
+For more information, see the documentation
 
 OBS: some functions use libraries pynput and windsound, which some times are
 difficult to install and do not works on non-windows platforms. Comment on
