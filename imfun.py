@@ -804,7 +804,7 @@ def im2label(root, classes, **kwargs):
 class improfile_class(object):
     '''This is a class to help improfile function (choose polygonal ROI)
     
-    Read 'improfile' function for more informations.
+    Please refers to the documentation of 'improfile' function
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
