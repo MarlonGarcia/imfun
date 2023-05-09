@@ -891,7 +891,8 @@ class improfile_class(object):
 
 
 def improfile(image, **kwargs):
-    '''Find the profile of pixels intensity between two points in an image
+    '''
+    Find the profile of pixels intensity between two points in an image
     
     [profile, points_out] = improfile(image, **cmap, **window_name, **show)
     
