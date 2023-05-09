@@ -1002,9 +1002,10 @@ def scale255(image):
 
 
 class polyroi1(object):
-    '''This is a class to help polyroi function (choose polygonal ROI)
+    '''
+    This is a class to help polyroi function (choose polygonal ROI)
     
-    Read 'polyroi' function for more informations.
+    Please refers to the documentation of 'polyroi' function
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -1086,7 +1087,8 @@ class polyroi1(object):
 
 
 def polyroi(image, **kwargs):
-    '''Choose a polygonhal ROI with mouse
+    '''
+    Choose a polygonal region of interest (ROI) with mouse interactions
     
     [image2, points] = polyroi(image, **cmap, **window_name, **show)
     
