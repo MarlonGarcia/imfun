@@ -221,6 +221,7 @@ def rotate2D(pts, cnt, ang):
 
 class choose_points1(object):
     '''This is the class to help 'choose_points' function.
+    Please refers to the documentation of 'choose_points' function
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
