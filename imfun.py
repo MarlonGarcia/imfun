@@ -40,7 +40,8 @@ these imports if there are problems during installation.
 
 @author: Marlon Rodrigues Garcia
 @instit.:  State University of São Paulo
-@contact: marlonrg@gmail.com"""
+@contact: marlonrg@gmail.com
+"""
 
 import numpy as np
 import cv2
