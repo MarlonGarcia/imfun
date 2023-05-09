@@ -2,13 +2,13 @@
 """
 Imaging Functions Library
 
-This is a library to apply simple to complex functions to treat, transform and
-prepare images. This library helps to prepare image data for machine learning,
-for example, but also helps in simple functions, like image transformation,
-loading, and printing. Next are an example of functions.
+This is a Python library to apply simple to complex functions to treat, trans-
+form and prepare images. This library helps to prepare imaging data, for
+example, for machine learning, but also helps in simple functions, like image
+transformation, loading, and printing. Next are the example of some functions.
 
 
-These are an example of simple functions:
+Next are example of some simple functions from this library:
 - load_color_images: function to load all color images from a folder
 - plot_color_images: function to print all color images from a folder
 - highpass_fft: high-pass frequency filter using FFT algorithm
@@ -19,10 +19,11 @@ algorithms (like Random Forest).
 - good_colormaps: show different colormaps to choose one to highlight features.
 
 
-Examples of more complex functions:
+Examples of some more complex functions this library can perform:
 - align_ECC: align images using ECC algorithm from OpenCV
-- isoareas measure and statistics pixel's intensity by depth in a preferential
-direction.
+- isoareas: measure and statistics pixel's intensity by depth from a tumor
+(e.g. for a tumor slide) in a preferential directon (for example for fluore
+scence images)
 - im2label: transform an image to a segmented image label
 - crop_multiple: crop multiple images with the same cropping area.
 - polyroi: make a polygonal ROI in an image.
