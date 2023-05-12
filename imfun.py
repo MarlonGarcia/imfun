@@ -90,7 +90,8 @@ def load_gray_images(folder,colormap):
 
 
 def load_color_images(folder):
-    """Loading colorful images from 'folder'
+    """
+    Loading colorful images from 'folder'
     
     This function load all colorful images from 'folder' in variable I.
     """
@@ -105,7 +106,8 @@ def load_color_images(folder):
 
 
 def plot_gray_images(I,n):
-    '''Program to plot 'n' images from 'I' using 'opencv2'
+    '''
+    Program to plot 'n' images from 'I' using 'opencv2'
     
     This program will plot 'n' images from variable the list 'I' (a list of 
     numpy arrays). Press 'ESC' for close all the windows, or another key to 
@@ -126,7 +128,8 @@ def plot_gray_images(I,n):
 
 
 def plot_color_images(I,n):
-    '''Program to plot 'n' color images from 'I' using 'opencv2'
+    '''
+    Program to plot 'n' color images from 'I' using 'opencv2'
     
     This program will plot 'n' color images from variable the list 'I' (a list
     of numpy arrays). Press 'ESC' for close all the windows, or another key to
@@ -224,7 +227,8 @@ def rotate2D(pts, cnt, ang):
 
 
 class choose_points1(object):
-    '''This is the class to help 'choose_points' function.
+    '''
+    This is the class to help 'choose_points' function.
 
     Please refers to the documentation of 'choose_points' for more information
     '''
