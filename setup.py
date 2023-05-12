@@ -12,7 +12,16 @@ setup(
     url='https://github.com/MarlonGarcia/imfun',
     keywords='imaging processing functions',
     install_requires=[
-          'scikit-learn',
+          'numpy',
+          'cv2',
+          'os',
+          'matplotlib',
+          'scipy',
+          'winsound',
+          'time',
+          'ctypes',
+          'pynput',
+          'random',
       ],
 
 )
