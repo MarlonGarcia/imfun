@@ -147,7 +147,8 @@ def plot_color_images(I,n):
 
 
 def plot_gray(I, name, colormap):
-    '''Program to plot gray images with 'matplotlib' from the list 'I'
+    '''
+    Program to plot gray images with 'matplotlib' from the list 'I'
     
     I: input image (as a 'list' variable)
     name: window name
@@ -170,7 +171,8 @@ def plot_gray(I, name, colormap):
 
 
 def plot_bgr(I,name):
-    '''Program to plot BGR images with 'matplotlib' from the list 'I'
+    '''
+    Program to plot BGR images with 'matplotlib' from the list 'I'
     
     This program will plot RGB images from the list in 'I', using matplotlib.
     '''
@@ -189,8 +191,10 @@ def plot_bgr(I,name):
 
 
 def beep(**kwargs):
-    ''' Function to make a beep
-    beep(freq,duration)
+    '''
+    Function to make a beep
+    
+    beep(**freq, **duration)
     
     **freq: tone frequency, in hertz (preseted to 2500 Hz)
     **duration: tone duration, in miliseconds (preseted to 300 ms)
@@ -209,10 +213,10 @@ def beep(**kwargs):
 
 
 def rotate2D(pts, cnt, ang):
-    '''Rotating the points about a center 'cnt' by an ang 'ang' in radians.
+    '''
+    Rotating the points about a center 'cnt' by an ang 'ang' in radians.
     
     [pts_r] = rotate2D(pts, cnt, ang)
-    
     '''
     return np.dot(pts-cnt,np.array([[ np.cos(ang),np.sin(ang)],
                                     [-np.sin(ang),np.cos(ang)]]))+cnt
@@ -222,7 +226,7 @@ def rotate2D(pts, cnt, ang):
 class choose_points1(object):
     '''This is the class to help 'choose_points' function.
 
-    Please refers to the documentation of 'choose_points' function
+    Please refers to the documentation of 'choose_points' for more information
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -304,7 +308,8 @@ class choose_points1(object):
 
 
 def choose_points(image, **kwargs):
-    '''This function return the local of chosen points.
+    '''
+    This function return the local of chosen points.
     [image_out, points] = choose_points(image, **cmap, **window_name, **show)
     
     cmap: Chose the prefered colormap. If 'None', image in grayscale.
@@ -322,7 +327,8 @@ def choose_points(image, **kwargs):
     With this function it is possible to choose points in an image, and
     to get their positions.
     
-    **The files with double asteristic are optional (**kwargs).    '''   
+    **The files with double asteristic are optional (**kwargs).
+    '''   
     choose_class = choose_points1()
     
     # With 'kwargs' we can define extra arguments that the user can input.
