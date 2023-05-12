@@ -350,7 +350,8 @@ def choose_points(image, **kwargs):
 
 
 def flat2im(flat, height, width):
-    ''' Convert 1D flat 'numpy-array' into an 2D image
+    '''
+    Convert 1D flat 'numpy-array' into an 2D image
     I = flat2im(flat, height, width)
     
     flat: 1D array with size 'height*width'
@@ -418,7 +419,7 @@ def im2flat(image):
 class im2label_class(object):
     '''This is the class helps 'im2label' function.
     
-    Please refers to the documentation of 'im2label' function
+    Please refers to the documentation of 'im2label' for more information
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -568,7 +569,7 @@ def im2label(root, classes, **kwargs):
     identify which images are not labeled before to start. Final output image
     is scaled from 0 to 255.
     
-    im2label(root, classes)
+    im2label(root, classes, **open_roi, **cmap, **show, **equalize, **color)
     
     root: 'string'
         root directory where images are.
@@ -804,7 +805,7 @@ def im2label(root, classes, **kwargs):
 class improfile_class(object):
     '''This is a class to help improfile function (choose polygonal ROI)
     
-    Please refers to the documentation of 'improfile' function
+    Please refers to the documentation of 'polyroi' for more information
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -1005,7 +1006,7 @@ class polyroi1(object):
     '''
     This is a class to help polyroi function (choose polygonal ROI)
     
-    Please refers to the documentation of 'polyroi' function
+    Please refers to the documentation of 'polyroi' for more information
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
