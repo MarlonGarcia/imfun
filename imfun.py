@@ -392,16 +392,15 @@ def flat2im(flat, height, width):
 
 def im2flat(image):
     '''
-    Parameters
-    ----------
-    image : np.array
-        A 2D or 3D numpy array (if not, the program try to convert)
-        This is a numpy image to be flatten.
+    Transform a grayscale or multidimensional image into a flat 
 
-    Returns
-    -------
-    flat : np.array
-        A flatten array with (high*width)x1 for a 2D input, and a (high*width)xN for a N-dimensional input.
+    flat = im2flat(image)
+
+    image (np.array): A 2D or 3D numpy array (if not, the program try to convert)
+    This is a numpy image to be flatten.
+
+    flat (np.array): A flatten array with (high*width)x1 for a 2D input, and a
+    (high*width)xN for a N-dimensional input.
     '''
     image = np.asarray(image)
     
@@ -427,7 +426,8 @@ def im2flat(image):
 
 
 class im2label_class(object):
-    '''This is the class helps 'im2label' function.
+    '''
+    This is the class helps 'im2label' function.
     
     Please refers to the documentation of 'im2label' for more information
     '''
