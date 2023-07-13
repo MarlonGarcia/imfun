@@ -39,7 +39,7 @@ difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
 @author: Marlon Rodrigues Garcia
-@instit.:  State University of São Paulo
+@instit.:  São Paulo State University
 @contact: marlonrg@gmail.com
 """
 
