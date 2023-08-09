@@ -7,7 +7,7 @@ form and prepare images. This library helps to prepare imaging data, for
 example, for machine learning, but also helps in simple functions, like image
 transformation, loading, and printing. Next are the example of some functions.
 
- 
+
 Next are example of some simple functions from this library:
 - load_color_images: function to load all color images from a folder
 - plot_color_images: function to print all color images from a folder
