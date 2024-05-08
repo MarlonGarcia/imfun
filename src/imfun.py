@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Imaging Functions Library
 
-This is a Python library to apply simple to complex functions to treat, trans-
-form and prepare images. This library helps to prepare imaging data, for
-example, for machine learning, but also helps in simple functions, like image
-transformation, loading, and printing. Next are the example of some functions.
+This is a library to apply simple to complex functions to treat, transform and
+prepare images. This library helps to prepare image data for machine learning,
+for example, but also helps in simple functions, like image transformation,
+loading, and printing. Next are an example of functions.
 
 
-Next are example of some simple functions from this library:
+These are an example of simple functions:
 - load_color_images: function to load all color images from a folder
 - plot_color_images: function to print all color images from a folder
 - highpass_fft: high-pass frequency filter using FFT algorithm
@@ -19,29 +19,24 @@ algorithms (like Random Forest).
 - good_colormaps: show different colormaps to choose one to highlight features.
 
 
-Examples of some more complex functions this library can perform:
+Examples of more complex functions:
 - align_ECC: align images using ECC algorithm from OpenCV
-- isoareas: measure and statistics pixel's intensity by depth from a tumor
-(e.g. for a tumor slide) in a preferential directon (for example for fluore
-scence images)
-- im2label: extract imaging labels from images, e.g for machine learning
-segmentation tasks.
-- crop_multiple: crop multiple images with the same rectangular cropping area.
-- polyroi: make a polygonal crop (or region of interest) from an image.
-- crop_poly_multiple: make multiple polygonal crops (or ROIs), replicating
-an original polygonal ROI to crop other images (uses mouse interaction).
+- isoareas measure and statistics pixel's intensity by depth in a preferential
+direction.
+- im2label: transform an image to a segmented image label
+- crop_multiple: crop multiple images with the same cropping area.
+- polyroi: make a polygonal ROI in an image.
+- crop_poly_multiple: make polygonal ROI and replicate the same ROI in other
+images, changing its position.
 - choose_points: choose points in an image, and retrieve its indexes.
-
-For more information, see the documentation
 
 OBS: some functions use libraries pynput and windsound, which some times are
 difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
 @author: Marlon Rodrigues Garcia
-@instit.:  São Paulo State University
-@contact: marlonrg@gmail.com
-"""
+@instit.: State University of São Paulo (Unesp)
+@contact: marlonrg@gmail.com'''
 
 import numpy as np
 import cv2
@@ -90,8 +85,7 @@ def load_gray_images(folder,colormap):
 
 
 def load_color_images(folder):
-    """
-    Loading colorful images from 'folder'
+    """Loading colorful images from 'folder'
     
     This function load all colorful images from 'folder' in variable I.
     """
@@ -106,8 +100,7 @@ def load_color_images(folder):
 
 
 def plot_gray_images(I,n):
-    '''
-    Program to plot 'n' images from 'I' using 'opencv2'
+    '''Program to plot 'n' images from 'I' using 'opencv2'
     
     This program will plot 'n' images from variable the list 'I' (a list of 
     numpy arrays). Press 'ESC' for close all the windows, or another key to 
@@ -128,8 +121,7 @@ def plot_gray_images(I,n):
 
 
 def plot_color_images(I,n):
-    '''
-    Program to plot 'n' color images from 'I' using 'opencv2'
+    '''Program to plot 'n' color images from 'I' using 'opencv2'
     
     This program will plot 'n' color images from variable the list 'I' (a list
     of numpy arrays). Press 'ESC' for close all the windows, or another key to
@@ -150,8 +142,7 @@ def plot_color_images(I,n):
 
 
 def plot_gray(I, name, colormap):
-    '''
-    Program to plot gray images with 'matplotlib' from the list 'I'
+    '''Program to plot gray images with 'matplotlib' from the list 'I'
     
     I: input image (as a 'list' variable)
     name: window name
@@ -174,8 +165,7 @@ def plot_gray(I, name, colormap):
 
 
 def plot_bgr(I,name):
-    '''
-    Program to plot BGR images with 'matplotlib' from the list 'I'
+    '''Program to plot BGR images with 'matplotlib' from the list 'I'
     
     This program will plot RGB images from the list in 'I', using matplotlib.
     '''
@@ -194,10 +184,8 @@ def plot_bgr(I,name):
 
 
 def beep(**kwargs):
-    '''
-    Function to make a beep
-    
-    beep(**freq, **duration)
+    ''' Function to make a beep
+    beep(freq,duration)
     
     **freq: tone frequency, in hertz (preseted to 2500 Hz)
     **duration: tone duration, in miliseconds (preseted to 300 ms)
@@ -216,10 +204,10 @@ def beep(**kwargs):
 
 
 def rotate2D(pts, cnt, ang):
-    '''
-    Rotating the points about a center 'cnt' by an ang 'ang' in radians.
+    '''Rotating the points about a center 'cnt' by an ang 'ang' in radians.
     
     [pts_r] = rotate2D(pts, cnt, ang)
+    
     '''
     return np.dot(pts-cnt,np.array([[ np.cos(ang),np.sin(ang)],
                                     [-np.sin(ang),np.cos(ang)]]))+cnt
@@ -227,10 +215,7 @@ def rotate2D(pts, cnt, ang):
 
 
 class choose_points1(object):
-    '''
-    This is the class to help 'choose_points' function.
-
-    Please refers to the documentation of 'choose_points' for more information
+    '''This is the class to help 'choose_points' function.
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -312,8 +297,7 @@ class choose_points1(object):
 
 
 def choose_points(image, **kwargs):
-    '''
-    This function return the local of chosen points.
+    '''This function return the local of chosen points.
     [image_out, points] = choose_points(image, **cmap, **window_name, **show)
     
     cmap: Chose the prefered colormap. If 'None', image in grayscale.
@@ -331,8 +315,7 @@ def choose_points(image, **kwargs):
     With this function it is possible to choose points in an image, and
     to get their positions.
     
-    **The files with double asteristic are optional (**kwargs).
-    '''   
+    **The files with double asteristic are optional (**kwargs).    '''   
     choose_class = choose_points1()
     
     # With 'kwargs' we can define extra arguments that the user can input.
@@ -360,8 +343,7 @@ def choose_points(image, **kwargs):
 
 
 def flat2im(flat, height, width):
-    '''
-    Convert 1D flat 'numpy-array' into an 2D image
+    ''' Convert 1D flat 'numpy-array' into an 2D image
     I = flat2im(flat, height, width)
     
     flat: 1D array with size 'height*width'
@@ -392,15 +374,16 @@ def flat2im(flat, height, width):
 
 def im2flat(image):
     '''
-    Transform a grayscale or multidimensional image into a flat 
+    Parameters
+    ----------
+    image : np.array
+        A 2D or 3D numpy array (if not, the program try to convert)
+        This is a numpy image to be flatten.
 
-    flat = im2flat(image)
-
-    image (np.array): A 2D or 3D numpy array (if not, the program try to convert)
-    This is a numpy image to be flatten.
-
-    flat (np.array): A flatten array with (high*width)x1 for a 2D input, and a
-    (high*width)xN for a N-dimensional input.
+    Returns
+    -------
+    flat : np.array
+        A flatten array with (high*width)x1 for a 2D input, and a (high*width)xN for a N-dimensional input.
     '''
     image = np.asarray(image)
     
@@ -426,10 +409,7 @@ def im2flat(image):
 
 
 class im2label_class(object):
-    '''
-    This is the class helps 'im2label' function.
-    
-    Please refers to the documentation of 'im2label' for more information
+    '''This is the class helps 'im2label' function.
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -579,7 +559,7 @@ def im2label(root, classes, **kwargs):
     identify which images are not labeled before to start. Final output image
     is scaled from 0 to 255.
     
-    im2label(root, classes, **open_roi, **cmap, **show, **equalize, **color)
+    im2label(root, classes)
     
     root: 'string'
         root directory where images are.
@@ -815,7 +795,7 @@ def im2label(root, classes, **kwargs):
 class improfile_class(object):
     '''This is a class to help improfile function (choose polygonal ROI)
     
-    Please refers to the documentation of 'polyroi' for more information
+    Read 'improfile' function for more informations.
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -902,8 +882,7 @@ class improfile_class(object):
 
 
 def improfile(image, **kwargs):
-    '''
-    Find the profile of pixels intensity between two points in an image
+    '''Find the profile of pixels intensity between two points in an image
     
     [profile, points_out] = improfile(image, **cmap, **window_name, **show)
     
@@ -1013,10 +992,9 @@ def scale255(image):
 
 
 class polyroi1(object):
-    '''
-    This is a class to help polyroi function (choose polygonal ROI)
+    '''This is a class to help polyroi function (choose polygonal ROI)
     
-    Please refers to the documentation of 'polyroi' for more information
+    Read 'polyroi' function for more informations.
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -1098,8 +1076,7 @@ class polyroi1(object):
 
 
 def polyroi(image, **kwargs):
-    '''
-    Choose a polygonal region of interest (ROI) with mouse interactions
+    '''Choose a polygonhal ROI with mouse
     
     [image2, points] = polyroi(image, **cmap, **window_name, **show)
     
@@ -1678,7 +1655,28 @@ def crop_poly_multiple(images, **kwargs):
 
 def filter_finder(x, y, **kwargs):
     '''
-    Function to study which filter to use for a signal y(x)
+    Function to study which filter to use for a signal f(x) = y
+
+    Input Parameters
+    ----------------
+    x : 1D numpy.ndarray
+        Variable of f(x) function. It can be, for example, the time in a time-
+        dependent f(x).
+    y : 1D numpy.ndarray
+        Signal or sequence to be filtered.
+    **kwargs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    
+    
+    How to Use the Function
+    -----------------------
     
     output = filter_finder(x, y, **kwargs)
     
@@ -2730,3 +2728,4 @@ def good_colormaps(image):
     plt.tight_layout()
     plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95,
                         hspace=0.15, wspace=0.15)
+
