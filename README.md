@@ -1,4 +1,4 @@
-# Imaging Functions Library
+# Image Functions Library
 
 This is a library to apply simple to complex functions to treat, transform and
 prepare images. This library helps to prepare image data for machine learning,
