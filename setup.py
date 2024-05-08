@@ -10,7 +10,7 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     url='https://github.com/MarlonGarcia/imfun',
-    keywords='imaging processing functions',
+    keywords='image processing functions',
     install_requires=[
           'numpy',
           'cv2',
