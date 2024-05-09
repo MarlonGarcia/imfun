@@ -23,7 +23,6 @@ dependencies = [
     "matplotlib",
     "scipy",
     "pynput",
-    "random",
 ]
 
 requires-python = ">=3.7"

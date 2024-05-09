@@ -38,7 +38,6 @@ Requires-Dist: numpy
 Requires-Dist: opencv-contrib-python
 Requires-Dist: matplotlib
 Requires-Dist: scipy
-Requires-Dist: winsound
 Requires-Dist: pynput
 Requires-Dist: random
 
