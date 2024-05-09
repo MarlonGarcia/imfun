@@ -1,0 +1,7 @@
+numpy
+opencv-contrib-python
+matplotlib
+scipy
+winsound
+pynput
+random
