@@ -35,7 +35,9 @@ these imports if there are problems during installation.
 ## How to Install
 
 You can install using `pip`:
-> pip install image-functions
+\`\`\`
+pip install image-functions
+\`\`\`
 
 Author: Marlon Rodrigues Garcia  
 Institution:  São Paulo State University  
