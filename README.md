@@ -32,6 +32,11 @@ OBS: some functions use libraries pynput and windsound, which some times are
 difficult to install and do not works on non-windows platforms. Comment on
 these imports if there are problems during installation.
 
+## How to Install
+
+You can install using `pip`:
+> pip install image-functions
+
 Author: Marlon Rodrigues Garcia  
 Institution:  São Paulo State University  
 Contact: marlonrg@gmail.com
