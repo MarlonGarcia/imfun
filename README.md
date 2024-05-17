@@ -8,7 +8,7 @@ polygonal), choose points, get image properties, align and transform images
 others.
 
 
-1. Functins to Load and Plot
+### 1. Functins to Load and Plot
     - load_gray_images: loads all images from a folder, in grayscale;
     - load_color_images: loads all color images from a folder;
     - plot_gray_images: prints all grayscale images from a variable 'I';
@@ -17,9 +17,9 @@ others.
     - plot_bgr: prints a color image in BGR format;
 
 
-2. Pre-Processing for Machine Learning and Computer Vision
+### 2. Pre-Processing for Machine Learning and Computer Vision
 
-    2.1. ROI and Handling (*Most Important Ones*)
+#### 2.1. ROI and Handling (*Most Important Ones*)
     - polyroi: GUI to creates a polygonal region of interest (ROI)
     - crop_image: GUI to creates a rectangular crop in an image
     - crop_multiple: crops multiple images using the same crop from 1st image
@@ -29,7 +29,7 @@ others.
     - imroiprop: getting properties from an image ROI
     
     
-    2.2. Image Alignment and Transformation
+#### 2.2. Image Alignment and Transformation
     - rotate2D: rotate points by an angle about a center;
     - flat2im: transforms a flat vector into a 2D image
     - im2flat: transforms a 2D image in a flat vector
@@ -40,7 +40,7 @@ others.
     - imwarp: function to warp a set of images using a warp matrix (maybe not working)
     
     
-3. Filtering Images and Signals
+### 3. Filtering Images and Signals
     - filter_finder: study and find which filter to use (for signals, 1D)
     - highpass_gauss: high-pass Gaussian filter for images (2D)
     - highpass_fft: high-pass image (2D) filter based on FFT
@@ -48,7 +48,7 @@ others.
     - filt_hist: filtering histograms with zero/null values (removing zeros)
 
 
-4. Bonus Functions
+### 4. Bonus Functions
     - beep: making 'beeps' to help warning when a long algorithm has finished;
     - isoareas: complex function to measure pixels' intensity in adjacet areas ***
     - good_colormaps: visualizing best Matplotlib colormaps in an image
@@ -58,7 +58,7 @@ others.
 ## How to Install
 
 You can install using `pip`:
-```pip install image-functions```
+
 ```
 pip install image-functions
 ```
@@ -67,7 +67,21 @@ pip install image-functions
 difficult to install and do not works on non-windows platforms. Comment these
 library imports if there are problems during installation or loading.
 
-@author: Marlon Rodrigues Garcia
-@school: School of Engineering, Campus of Sao Joao da Boa Vista
-@instit.: Sao Paulo State University (Unesp)
-@contact: marlon.garcia@unesp.br
+- author: Marlon Rodrigues Garcia
+- contact: marlon.garcia@unesp.br
+- institution: Sao Paulo State University (Unesp)
+
+
+### Scientific Research
+
+This work is the product of the research being conducted at two universities at Brazil:
+
+- Dept. of Electronic and Telecommunication Engineering
+- School of Engineering, Campus of Sao Joao da Boa Vista
+- Sao Paulo State University (Unesp)
+- website: https://www.sjbv.unesp.br/
+
+- Biophotonics Laboratory, Optics Group (GO)
+- São Carlos Institute of Physics (IFSC)
+- University of São Paulo (USP)
+- website: https://www2.ifsc.usp.br/english/
