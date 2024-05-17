@@ -28,7 +28,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
     
 #### 2.2. Image Alignment and Transformation
 
-- `rotate2D`: rotate points by an angle about a center;
+- `rotate2D`: rotate points by an angle about a center
 - `flat2im`: transforms a flat vector into a 2D image
 - `im2flat`: transforms a 2D image in a flat vector
 - `im2label`: GUI to transform images in labels for image segmentation (very automated function)
@@ -49,7 +49,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 
 ### 4. Bonus Functions
 
-- `beep`: making 'beeps' to help warn when a long algorithm has finished;
+- `beep`: making 'beeps' to help warn when a long algorithm has finished
 - `isoareas`: complex function to measure pixels' intensity in adjacent areas. This is a very specific function to process fluorescence intensities of cells in confocal microscopy images
 - `good_colormaps`: visualizing the best Matplotlib colormaps in an image
 - `improfile`: finds the pixels' intensity profile between two points (GUI) (maybe not working)

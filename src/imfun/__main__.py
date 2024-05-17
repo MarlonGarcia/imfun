@@ -178,7 +178,7 @@ def beep(**kwargs):
     if duration is None:
         duration = 300  # Set Duration To 300 ms == 0.3 second
     numb = 5 # number of beeps
-    for n in range(0,numb):
+    for n in range(0, numb):
         time.sleep(0.0005)
         winsound.Beep(freq, duration)
 
