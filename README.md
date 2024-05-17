@@ -4,50 +4,55 @@ Library for image pre-processing, with functions to handle and prepare images fo
 
 
 ### 1. Functions to Load and Plot
-- load_gray_images: loads all images from a folder, in grayscale
-- load_color_images: loads all color images from a folder
-- plot_gray_images: prints all grayscale images from a variable 'I'
-- plot_color_images: prints all color images from a variable 'I'
-- plot_gray: prints a grayscale image
-- plot_bgr: prints a color image in BGR format
+
+- `load_gray_images`: loads all images from a folder, in grayscale
+- `load_color_images`: loads all color images from a folder
+- `plot_gray_images`: prints all grayscale images from a variable 'I'
+- `plot_color_images`: prints all color images from a variable 'I'
+- `plot_gray`: prints a grayscale image
+- `plot_bgr`: prints a color image in BGR format
 
 
 ### 2. Pre-Processing for Machine Learning and Computer Vision
 
 #### 2.1. ROI and Handling (*Most Important Ones*)
-- polyroi: GUI to create a polygonal region of interest (ROI)
-- crop_image: GUI to create a rectangular crop in an image
-- crop_multiple: crops multiple images using the same crop from 1st image
-- crop_poly_multiple: polygonal crop multiple images based on 1st cropping
-- choose_points: GUI to interact with the user to choose points in an image
-- imchoose: function to choose images in a given set of images (with GUI)
-- imroiprop: getting properties from an image ROI
+
+- `polyroi`: GUI to create a polygonal region of interest (ROI)
+- `crop_image`: GUI to create a rectangular crop in an image
+- `crop_multiple`: crops multiple images using the same crop from 1st image
+- `crop_poly_multiple`: polygonal crop multiple images based on 1st cropping
+- `choose_points`: GUI to interact with the user to choose points in an image
+- `imchoose`: function to choose images in a given set of images (with GUI)
+- `imroiprop`: getting properties from an image ROI
     
     
 #### 2.2. Image Alignment and Transformation
-- rotate2D: rotate points by an angle about a center;
-- flat2im: transforms a flat vector into a 2D image
-- im2flat: transforms a 2D image in a flat vector
-- im2label: GUI to transform images in labels for image segmentation (very automated function)
-- scale255: scales an image to the [0, 255] range
-- align_features: Align images with Feature-Based algorithm, from OpenCV (maybe not working)
-- align_ECC: image alignment using ECC algorithm from OpenCV (diffuse image)
-- imwarp: function to warp a set of images using a warp matrix (maybe not working)
+
+- `rotate2D`: rotate points by an angle about a center;
+- `flat2im`: transforms a flat vector into a 2D image
+- `im2flat`: transforms a 2D image in a flat vector
+- `im2label`: GUI to transform images in labels for image segmentation (very automated function)
+- `scale255`: scales an image to the [0, 255] range
+- `align_features`: Align images with Feature-Based algorithm, from OpenCV (maybe not working)
+- `align_ECC`: image alignment using ECC algorithm from OpenCV (diffuse image)
+- `imwarp`: function to warp a set of images using a warp matrix (maybe not working)
     
     
 ### 3. Filtering Images and Signals
-- filter_finder: study and find which filter to use (for signals, 1D)
-- highpass_gauss: high-pass Gaussian filter for images (2D)
-- highpass_fft: high-pass image (2D) filter based on FFT
-- lowpass_fft: low-pass image (2D) filter based on FFT
-- filt_hist: filtering histograms with zero/null values (removing zeros)
+
+- `filter_finder`: study and find which filter to use (for signals, 1D)
+- `highpass_gauss`: high-pass Gaussian filter for images (2D)
+- `highpass_fft`: high-pass image (2D) filter based on FFT
+- `lowpass_fft`: low-pass image (2D) filter based on FFT
+- `filt_hist`: filtering histograms with zero/null values (removing zeros)
 
 
 ### 4. Bonus Functions
-- beep: making 'beeps' to help warn when a long algorithm has finished;
-- isoareas: complex function to measure pixels' intensity in adjacent areas. This is a very specific function to process fluorescence intensities of cells in confocal microscopy images
-- good_colormaps: visualizing the best Matplotlib colormaps in an image
-- improfile: finds the pixels' intensity profile between two points (GUI) (maybe not working)
+
+- `beep`: making 'beeps' to help warn when a long algorithm has finished;
+- `isoareas`: complex function to measure pixels' intensity in adjacent areas. This is a very specific function to process fluorescence intensities of cells in confocal microscopy images
+- `good_colormaps`: visualizing the best Matplotlib colormaps in an image
+- `improfile`: finds the pixels' intensity profile between two points (GUI) (maybe not working)
     
 
 ## How to Install
@@ -72,8 +77,9 @@ This work is the product of the research being conducted at two universities in 
 - Dept. of Electronic and Telecommunication Engineering
 - School of Engineering, Campus of Sao Joao da Boa Vista
 - Sao Paulo State University (Unesp)
-- website: https://www.sjbv.unesp.br/
-<br>
+- website: https://www.sjbv.unesp.br/<br>
+
+
 - Biophotonics Laboratory, Optics Group (GO)
 - São Carlos Institute of Physics (IFSC)
 - University of São Paulo (USP)
