@@ -19,7 +19,7 @@ others.
 
 2. Pre-Processing for Machine Learning and Computer Vision
 
- 2.1. ROI and Handling (*Most Important Ones*)
+    2.1. ROI and Handling (*Most Important Ones*)
     - polyroi: GUI to creates a polygonal region of interest (ROI)
     - crop_image: GUI to creates a rectangular crop in an image
     - crop_multiple: crops multiple images using the same crop from 1st image
@@ -29,7 +29,7 @@ others.
     - imroiprop: getting properties from an image ROI
     
     
- 2.2. Image Alignment and Transformation
+    2.2. Image Alignment and Transformation
     - rotate2D: rotate points by an angle about a center;
     - flat2im: transforms a flat vector into a 2D image
     - im2flat: transforms a 2D image in a flat vector
