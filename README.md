@@ -74,12 +74,13 @@ pip install image-functions
 
 This work is the product of the research being conducted at two universities in Brazil:
 
+#### Unesp
 - Dept. of Electronic and Telecommunication Engineering
 - School of Engineering, Campus of Sao Joao da Boa Vista
 - Sao Paulo State University (Unesp)
-- website: https://www.sjbv.unesp.br/<br>
+- website: https://www.sjbv.unesp.br/
 
-
+#### USP
 - Biophotonics Laboratory, Optics Group (GO)
 - São Carlos Institute of Physics (IFSC)
 - University of São Paulo (USP)
