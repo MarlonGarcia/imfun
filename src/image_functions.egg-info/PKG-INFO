@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: image-functions
-Version: 0.1.1
+Version: 0.1.2
 Summary: Image Processing Functions
 Author-email: Marlon Rodrigues Garcia <marlon.garcia@unesp.br>
 License: MIT License
@@ -104,7 +104,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 You can install using `pip`:
 
 ```
-pip install image-functions
+pip install image-functions==0.1.2
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
