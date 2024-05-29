@@ -2055,10 +2055,10 @@ def roi_stats(images_dir, save_dir, experiments, colors, **kwargs):
     passed to this function in the 'images_dir' variable. Inside this folder
     you can add as many parts of your experiment you want to (in this case
     exemplified as animals). Inside each part (or animal) of your experiments,
-    it have to be folders corresponding to the experiments conducted (for
-    example different times, or differents treatments or measurements).
+    it have to be folders corresponding to the exact experiments conducted (for
+    example different times, or differents treatments types or measurements).
     After the processing, a '.csv' data file is saved in the folder/directory
-    specified by the variable 'save_dir'.
+    specified in the variable 'save_dir'.
     
     Images Folder
         |
