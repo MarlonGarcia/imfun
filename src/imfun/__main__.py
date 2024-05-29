@@ -25,16 +25,78 @@ import os
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from scipy import stats
-# To use a 'beep' sound, uncomment: winsound, time.
-import winsound               # it only works on Windows
 import time
 import ctypes
-from pynput import keyboard   # It does not worked on Google Colab
 from random import shuffle
 from scipy import fftpack     # to apply FFT and iFFT
 from scipy import signal
 from scipy.fft import fft, fftfreq
 from scipy.interpolate import interp1d
+import pandas as pd
+from pynput import keyboard   # It does not worked on Google Colab
+# To use a 'beep' sound, uncomment: winsound, time.
+import winsound               # it only works on Windows
+
+
+
+def list_folders(directory):
+    '''
+    Function to list all folders inside a directory
+
+    Parameters
+    ----------
+    directory : string
+        A string with the directory. Example: 'C:/Users/User/My Drive/Data/'.
+
+    Returns
+    -------
+    folders : list
+        A list with all folders inside the directory.
+    '''
+    # First we eliminate problems of commands with "\" (e.g. "\n", "\t", etc.)
+    bytes_string = directory.encode('unicode_escape')
+    directory = bytes_string.decode('utf-8')
+    # Then we verify if the itens inside 'directory' are really folders
+    folders = []
+    for item in os.listdir(directory):
+        path = os.path.join(directory, item)
+        if os.path.isdir(path):
+            folders.append(item)
+    return folders
+
+
+
+def list_images(directory):
+    '''
+    Function to list all images inside a folder
+
+    Parameters
+    ----------
+    directory : string
+        A string with the directory. Example: 'C:/Users/User/My Drive/Data/'.
+
+    Returns
+    -------
+    folders : list
+        A list with all the images inside the folder.
+    '''
+    # First we eliminate problems of commands with "\" (e.g. "\n", "\t", etc.)
+    bytes_string = directory.encode('unicode_escape')
+    directory = bytes_string.decode('utf-8')
+    # Defining which image to consider
+    extensions = ['.jpg', '.JPG', '.jpeg','.JPEG', '.png', '.PNG', '.gif',
+                  '.GIF', '.tif', '.TIF', '.tiff', '.TIFF', '.heic', '.HEIC',
+                  '.heif', '.HEIF', '.psd', '.PSD', '.raw', '.RAW', '.bmp',
+                  '.BMP']
+    # Then we verify if the itens inside 'directory' are really images
+    image_names = []
+    for item in os.listdir(directory):
+        path = os.path.join(directory, item)
+        if os.path.isfile(path):
+            if any(item.lower().endswith(ext) for ext in extensions):
+                image_names.append(item)
+    return image_names
+
 
 
 def load_gray_images(folder, colormap):
@@ -1983,6 +2045,184 @@ def imroiprop(I):
 
 
 
+def roi_stats(images_dir, save_dir, experiments, colors, **kwargs):
+    ''' Easely calculate statistics of images in a given region of the images
+    
+    This function uses a interactive graphical user interface (GUI) to calcula-
+    te the statistics of multiple images, in a given region of interest (ROI)
+    inside the image. To use this function, your images have to be in a folder
+    tree like bellow. The outer folder will be 'Images Folder', that has to be
+    passed to this function in the 'images_dir' variable. Inside this folder
+    you can add as many parts of your experiment you want to (in this case
+    exemplified as animals). Inside each part (or animal) of your experiments,
+    it have to be folders corresponding to the experiments conducted (for
+    example different times, or differents treatments or measurements).
+    After the processing, a '.csv' data file is saved in the folder/directory
+    specified by the variable 'save_dir'.
+    
+    Images Folder
+        |
+        |
+        |--- Animal 1
+        |       |
+        |       |--- Experiment 1
+        |       |
+        |       |--- Experiment 2
+        |       |
+        |       |--- Experiment 3
+        |
+        |
+        |--- Animal 2
+                |
+                |--- Experiment 1
+                |
+                |--- Experiment 2
+                |
+                |--- Experiment 3
+    
+    Parameters
+    ----------
+    images_dir : string
+        Root directory (outer folder) of your images. E.g. 'C:/Users/User/data'
+    save_dir : string
+        Directory to save the images.
+    experiments : list
+        Names of the experiments. Note that it has to mach the experiment names
+        e.g. ['Experiment 1', 'Experiment 2', 'Experiment 3'] in the example.
+    colors : list
+        Name of the colors (or channels) to be analized in the image, or a list
+        with the string 'gray' for grayscale images. E.g.: ['gray'] or ['red'],
+        or even all the colors ['red', 'green', 'blue']
+    
+    **kwargs (arguments that may or may not be passed to the function)
+    ----------
+        stats : list
+            A list with the statistics to be calculated. Only mean and standard
+            deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
+        colormap : int
+            The colormap to use while choosing the region of interest
+            examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.
+    '''
+    colormap = kwargs.get('colormap', cv2.COLORMAP_PINK)
+    stats = kwargs.get('stats', ['mean', 'std'])
+    
+    if not colors or not experiments:
+        raise ValueError('\n\n- You did not choose the colors or the experiments correctly')
+
+    # Entering into the folder of images
+    folders = list_folders(images_dir)
+    
+    # Initiating the variable with the data to be saved
+    dados = {'Experiment':[]}
+    
+    # Adding all the names of experiments to be saved on 'dados'
+    for exp in experiments:
+        for color in colors:
+            for stat in stats:
+                dados[exp+' - '+stat+' '+color] = []
+    
+    # Defining the question to be asked to the user
+    question = 'OK: to continue\n\nCancel: for redo'
+    
+    
+    # Iterating between the folders with images
+    for folder in folders:
+        # Adding the experiment's name in the data to be saved
+        dados['Experiment'].append(folder)
+        # Reading all experiment names inside 'folders'
+        path = os.path.join(images_dir, folder)
+        times = list_folders(path)
+        # Iteratinf through all the experiments
+        for exp in experiments:
+            if exp in times:
+                # Reading the name of the first image inside the experiment folder
+                path = os.path.join(images_dir, folder, exp)
+                name = list_images(path)[0]
+                path = os.path.join(path, name)
+                # Reading image
+                if 'gray' in colors:
+                    Itemp = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+                else:
+                    Itemp = cv2.imread(path, cv2.IMREAD_COLOR)
+                    # Trying to change the image colors, if it is not, the image
+                    # was probably not recognized correctly, so raise an error
+                    try:
+                        Itemp = cv2.cvtColor(Itemp, cv2.COLOR_BGR2RGB)
+                    except:
+                        raise ValueError(f'\n\n- Error when opening image from {folder}, for the experiment: {exp}')
+                asw = 2
+                while asw != 1:
+                    # With the next command the user can circulate the lesion
+                    [Imask, temp] = polyroi(Itemp, cmap = colormap,
+                                                  window_name = f'Select the region of interest for {folder} / {exp}')
+                    # Then the box dialog pop up itself:
+                    asw = ctypes.windll.user32.MessageBoxW(0,question,'Question', 1)
+                # Calculating the measure defined in 'stast'
+                
+                if 'gray' in colors:
+                    if 'mean' in stats:
+                        dados[f'{exp} - mean gray'].append(np.mean(Itemp[Imask>0]))
+                    if 'std' in stats:
+                        dados[f'{exp} - std gray'].append(np.std(Itemp[Imask>0]))
+                else:
+                    if 'red' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean red'].append(np.mean(Itemp[:,:,0][Imask[:,:,0]>0]))
+                        if 'std' in stats:
+                            dados[f'{exp} - std red'].append(np.std(Itemp[:,:,0][Imask[:,:,0]>0]))
+                    if 'green' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean green'].append(np.mean(Itemp[:,:,1][Imask[:,:,1]>0]))
+                        if 'std' in stats:
+                            dados[f'{exp} - std green'].append(np.std(Itemp[:,:,1][Imask[:,:,1]>0]))
+                    if 'blue' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean blue'].append(np.mean(Itemp[:,:,2][Imask[:,:,2]>0]))
+                        if 'std' in stats:
+                            dados[f'{exp} - std blue'].append(np.std(Itemp[:,:,2][Imask[:,:,2]>0]))
+            
+            # If does not find the data, add zero to the data to be saved
+            else:
+                if 'gray' in colors:
+                    if 'mean' in stats:
+                        dados[f'{exp} - mean gray'].append(int(0))
+                    if 'std' in stats:
+                        dados[f'{exp} - std gray'].append(int(0))
+                else:
+                    if 'red' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean red'].append(int(0))
+                        if 'std' in stats:
+                            dados[f'{exp} - std red'].append(int(0))
+                    if 'green' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean green'].append(int(0))
+                        if 'std' in stats:
+                            dados[f'{exp} - std green'].append(int(0))
+                    if 'blue' in colors:
+                        if 'mean' in stats:
+                            dados[f'{exp} - mean blue'].append(int(0))
+                        if 'std' in stats:
+                            dados[f'{exp} - std blue'].append(int(0))
+    
+    ## Saving the data
+    columns = ['Experiment']
+    for exp in experiments:
+        for color in colors:
+            for stat in stats:
+                columns.append(f'{exp} - {stat} {color}')
+    
+    # Go to the directory where the data will be saved
+    os.chdir(save_dir)
+    
+    # Monting the data to be saved on a DataFrame
+    df = pd.DataFrame(dados, columns = columns)
+    
+    # Actually saving the data
+    df.to_csv('dados.csv', index = False)
+
+
+
 def imchoose(images, cmap):
     '''Function to chose images of given image set.
     
@@ -2709,4 +2949,3 @@ def good_colormaps(image):
     plt.tight_layout()
     plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95,
                         hspace=0.15, wspace=0.15)
-

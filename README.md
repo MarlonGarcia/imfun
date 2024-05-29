@@ -24,6 +24,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `choose_points`: GUI to interact with the user to choose points in an image
 - `imchoose`: function to choose images in a given set of images (with GUI)
 - `imroiprop`: getting properties from an image ROI
+- `roi_stats`: get statistics (mean and std) from images of multiple a experiments (important!)
     
     
 #### 2.2. Image Alignment and Transformation
