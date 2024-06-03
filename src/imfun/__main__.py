@@ -33,6 +33,9 @@ from scipy import signal
 from scipy.fft import fft, fftfreq
 from scipy.interpolate import interp1d
 import pandas as pd
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import tifffile as tiff       # To import ".lsm" images
 from pynput import keyboard   # It does not worked on Google Colab
 # To use a 'beep' sound, uncomment: winsound, time.
 import winsound               # it only works on Windows
@@ -243,6 +246,56 @@ def beep(**kwargs):
     for n in range(0, numb):
         time.sleep(0.0005)
         winsound.Beep(freq, duration)
+
+
+
+def read_lsm(file_path):
+    '''Reading and mounting images from Zeiss microscope in '.lsm' extension
+
+    Parameters
+    ----------
+    file_path : string
+        Path/Directory to the '.lsm' file.
+
+    Returns
+    -------
+    full_image : numpy.ndarray
+        Full assembled image.
+    '''
+    # Reading image and its metadata
+    with tiff.TiffFile(file_path) as tif:
+        images = tif.asarray()
+        metadata = tif.lsm_metadata
+    
+    # Transforming shape (Tiles, Channels, Width, Height) in (Tiles, Chan., W, H)
+    images = np.transpose(images, (0, 2, 3, 1))
+    
+    # Extracting the tile positions
+    tile_positions = metadata['TilePositions']
+    
+    # Discovering how many tiles we have on the horizontal axis (x axis)
+    tile_x = 1
+    for n in range(1, len(tile_positions)):
+        if tile_positions[n, 0] == tile_positions[0, 0]:
+            tile_x = n
+            break
+    
+    # Discovering how many tiles we have on the vertical axis (y axis)
+    tile_y = 1
+    value = tile_positions[0, 1]
+    for n in range(1, len(tile_positions)):
+        if tile_positions[n, 1] != value:
+            tile_y += 1
+            value = tile_positions[n, 1]
+    
+    # Mounting the full image
+    shape = np.shape(images)
+    full_image = np.zeros([shape[2]*tile_y, shape[1]*tile_x, 3], dtype='uint8')
+    for x in range(tile_x):
+        for y in range(tile_y):
+            full_image[y*shape[2]:(y+1)*shape[2], shape[1]*x:shape[1]*(x+1), :] = images[x + tile_x*y, :, :, :]
+    
+    return full_image
 
 
 
@@ -2045,7 +2098,7 @@ def imroiprop(I):
 
 
 
-def roi_stats(images_dir, save_dir, experiments, colors, **kwargs):
+def roi_stats(experiments, colors, **kwargs):
     ''' Easely calculate statistics of images in a given region of the images
     
     This function uses a interactive graphical user interface (GUI) to calcula-
@@ -2069,23 +2122,19 @@ def roi_stats(images_dir, save_dir, experiments, colors, **kwargs):
         |       |
         |       |--- Experiment 2
         |       |
-        |       |--- Experiment 3
+        |       '--- Experiment 3
         |
         |
-        |--- Animal 2
+        '--- Animal 2
                 |
                 |--- Experiment 1
                 |
                 |--- Experiment 2
                 |
-                |--- Experiment 3
+                '--- Experiment 3
     
     Parameters
     ----------
-    images_dir : string
-        Root directory (outer folder) of your images. E.g. 'C:/Users/User/data'
-    save_dir : string
-        Directory to save the images.
     experiments : list
         Names of the experiments. Note that it has to mach the experiment names
         e.g. ['Experiment 1', 'Experiment 2', 'Experiment 3'] in the example.
@@ -2096,16 +2145,43 @@ def roi_stats(images_dir, save_dir, experiments, colors, **kwargs):
     
     **kwargs (arguments that may or may not be passed to the function)
     ----------
-        stats : list
-            A list with the statistics to be calculated. Only mean and standard
-            deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
-        colormap : int
-            The colormap to use while choosing the region of interest
-            examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.
+    images_dir : string
+        Root directory (outer folder) of your images. E.g. 'C:/Users/User/data'
+    save_dir : string
+        Directory to save the images.
+    stats : list
+        A list with the statistics to be calculated. Only mean and standard
+        deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
+    colormap : int
+        The colormap to use while choosing the region of interest
+        examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.
     '''
     colormap = kwargs.get('colormap', cv2.COLORMAP_PINK)
     stats = kwargs.get('stats', ['mean', 'std'])
+    images_dir = kwargs.get('images_dir', None)
+    save_dir = kwargs.get('save_dir', None)
     
+    ## Display a message to choose the folder the folders
+    # Create the root window and hide it
+    root = tk.Tk()
+    root.withdraw()
+    
+    ## Prompt a dialog to user to select the folder 'images_dir' and 'save_dir'
+    if not images_dir:
+        images_dir = filedialog.askdirectory(title='Please select the folder where the images are')
+        if not images_dir:
+            messagebox.showinfo('Selection Cancelled', 'No folder selected for images.')
+    
+    # Prompt the user to select the second folder
+    if not save_dir:
+        save_dir = filedialog.askdirectory(title='Please select the folder to save files')
+        if not save_dir:
+            messagebox.showinfo('Selection Cancelled', 'No folder selected to save the data.')
+    
+    # Show a message confirming the selections
+    messagebox.showinfo('Folders Selected', f'Images folder: {images_dir}\nSave folder: {save_dir}')
+    
+    # Verify if user choose the colors to be processed
     if not colors or not experiments:
         raise ValueError('\n\n- You did not choose the colors or the experiments correctly')
 

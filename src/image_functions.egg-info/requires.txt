@@ -1,6 +1,0 @@
-numpy
-opencv-contrib-python
-matplotlib
-scipy
-pynput
-pandas
