@@ -250,7 +250,7 @@ def beep(**kwargs):
 
 
 def read_lsm(file_path):
-    '''Reading and mounting images from Zeiss microscope in '.lsm' extension
+    '''Reading and mounting images of '.lsm' extension from Zeiss microscope 
 
     Parameters
     ----------

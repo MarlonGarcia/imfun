@@ -1,0 +1,2 @@
+[console_scripts]
+realpython = imfun.__main__:main
