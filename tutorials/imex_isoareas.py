@@ -59,6 +59,9 @@ pixel_size : float or integer (default = 1.0)
     pixel represents a size of 0.83 micrometers in the image (for a micro-
     scope image), than choose 'pixel_size = 0.83e-6'. Default value is 1.0.
 
+show : boolean
+    Choose 'True' to visualize each image processed, with its isoareas.
+
 Returns (Outputs)
 -----------------
 dictionary : dictionary
@@ -66,12 +69,17 @@ dictionary : dictionary
     each channel selected in the variable 'channels'.'''
 
 
-import imfun1 as imfun
+# Importing imfun library
+import imfun
 
-
+# Choosing the folder where the images are
 folder = r'C:\Users\marlo\Downloads\Widefield\Confocal'
 
+# Running the 'roi_stats_in_detph' function
+dictionary = imfun.roi_stats_in_detph(folder, 7, channels=[1], pixel_size = 0.83e-6, show = True)
 
-dictionary = imfun.roi_stats_in_detph(folder, 7, channels=[1], pixel_size = 0.83e-6)
 
 
+'''OBS: the function is calculating the statistics only for the first channel
+of the image. If you want to calculate the statistics for all the three
+channels, choose 'channels = [1, 2, 3]' in the code above'''

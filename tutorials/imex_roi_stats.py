@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-''' imex_roi_stats.py
-
-The following example show how to use the "roi_stats" function
-
-Easely calculate statistics of images in a given region of the images
+''' Easely calculate statistics of images in a given region of the images
 
 This function uses a interactive graphical user interface (GUI) to calcula-
 te the statistics of multiple images, in a given region of interest (ROI)
@@ -37,7 +32,30 @@ Images Folder
             |
             '--- Experiment 3
 
-'''
+Parameters
+----------
+experiments : list
+    Names of the experiments. Note that it has to mach the experiment names
+    e.g. ['Experiment 1', 'Experiment 2', 'Experiment 3'] in the example.
+colors : list
+    Name of the colors (or channels) to be analized in the image, or a list
+    with the string 'gray' for grayscale images. E.g.: ['gray'] or ['red'],
+    or even all the colors ['red', 'green', 'blue']
+
+**kwargs (arguments that may or may not be passed to the function)
+----------
+images_dir : string
+    Root directory (outer folder) of your images. E.g. 'C:/Users/User/data'
+save_dir : string
+    Directory to save the images.
+stats : list
+    A list with the statistics to be calculated. Only mean and standard
+    deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
+show : boolean
+    If 'True', print all the images processed. The default is 'False'.
+colormap : int
+    The colormap to use while choosing the region of interest
+    examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.'''
 
 import cv2
 import imfun
@@ -64,11 +82,12 @@ stats = ['mean', 'std']
 # Defining the colormap to be used to show the images
 colormap = cv2.COLORMAP_PARULA
 
-# Other good colormaps: "cv2.COLORMAP_PINK", "cv2.COLORMAP_HSV", "cv2.COLORMAP_BONE"
+# Other colormaps: "cv2.COLORMAP_PINK", "cv2.COLORMAP_HSV", "cv2.COLORMAP_BONE"
 
-# Run this code to choose the folder by yourself
+# Run the code below to choose the folder by yourself (with a pop-up)
 # imfun.roi_stats(experiments, colors, colormap=colormap)
 
-# Run this when you difined the directories in the variables 'images_dir' and 'save_dir'
-imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, colormap=colormap)
+# Run the code below when you want to difine the directories in the variables
+# 'images_dir' and 'save_dir'. Using 'show=True', all images will be printed.
+imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, show=True, colormap=colormap)
 

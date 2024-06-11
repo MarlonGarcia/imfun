@@ -23,22 +23,23 @@ import numpy as np
 import cv2
 import os
 import matplotlib.pyplot as plt
-from scipy import interpolate
 from scipy import stats
 import time
 import ctypes
+import pandas as pd
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import tifffile as tiff       # To import ".lsm" images
 from random import shuffle
 from scipy import fftpack     # to apply FFT and iFFT
 from scipy import signal
 from scipy.fft import fft, fftfreq
 from scipy.interpolate import interp1d
-import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox
-import tifffile as tiff       # To import ".lsm" images
+from scipy.interpolate import splprep, splev
+from scipy.ndimage import center_of_mass
+from skimage.measure import shannon_entropy
 from pynput import keyboard   # It does not worked on Google Colab
-# To use a 'beep' sound, uncomment: winsound, time.
-import winsound               # it only works on Windows
+import winsound               # To perform 'beep' sounds, only works on Windows
 
 
 
@@ -90,7 +91,7 @@ def list_images(directory):
     extensions = ['.jpg', '.JPG', '.jpeg','.JPEG', '.png', '.PNG', '.gif',
                   '.GIF', '.tif', '.TIF', '.tiff', '.TIFF', '.heic', '.HEIC',
                   '.heif', '.HEIF', '.psd', '.PSD', '.raw', '.RAW', '.bmp',
-                  '.BMP']
+                  '.BMP', '.lsm', '.LSM']
     # Then we verify if the itens inside 'directory' are really images
     image_names = []
     for item in os.listdir(directory):
@@ -267,7 +268,7 @@ def read_lsm(file_path):
         images = tif.asarray()
         metadata = tif.lsm_metadata
     
-    # Transforming shape (Tiles, Channels, Width, Height) in (Tiles, Chan., W, H)
+    # Transforming shape (Tiles, Channels, Width, Height) in (T, W, H, Chan.)
     images = np.transpose(images, (0, 2, 3, 1))
     
     # Extracting the tile positions
@@ -763,9 +764,9 @@ def im2label(root, classes, **kwargs):
                     break
             # Creating a roi to signaling the chosen region with '1'
             if img_type == 'gray':
-                roi = np.zeros(np.shape(image), np.int32)
+                roi = np.zeros(np.shape(image), 'int')
             else:
-                roi = np.zeros(np.shape(image[:,:,0]), np.int32)
+                roi = np.zeros(np.shape(image[:,:,0]), 'int')
             # First we run when roi regions are closed (open_roi == None)
             if not open_roi:
                 cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
@@ -1430,18 +1431,18 @@ class crop_multiple1(object):
             # macht with the other ones).
             if width % 2 == 0:
                 if height % 2 == 0:
-                    difference1 = tuple((np.int32(np.int(width/2)), np.int32(np.int(height/2))))
-                    difference2 = tuple((np.int32(-np.int(width/2)), np.int32(-np.int(height/2))))
+                    difference1 = tuple((int(np.int(width/2)), int(np.int(height/2))))
+                    difference2 = tuple((int(-np.int(width/2)), int(-np.int(height/2))))
                 else:
-                    difference1 = tuple((np.int32(np.int(width/2)), np.int32(np.int(height/2)+1)))
-                    difference2 = tuple((np.int32(-np.int(width/2)), np.int32(-np.int(height/2))))
+                    difference1 = tuple((int(np.int(width/2)), int(np.int(height/2)+1)))
+                    difference2 = tuple((int(-np.int(width/2)), int(-np.int(height/2))))
             else:
                 if height % 2 == 0:
-                    difference1 = tuple((np.int32(np.int(width/2)+1), np.int32(np.int(height/2))))
-                    difference2 = tuple((np.int32(-np.int(width/2)), np.int32(-np.int(height/2))))
+                    difference1 = tuple((int(np.int(width/2)+1), int(np.int(height/2))))
+                    difference2 = tuple((int(-np.int(width/2)), int(-np.int(height/2))))
                 else:
-                    difference1 = tuple((np.int32(np.int(width/2)+1), np.int32(np.int(height/2)+1)))
-                    difference2 = tuple((np.int32(-np.int(width/2)), np.int32(-np.int(height/2))))
+                    difference1 = tuple((int(np.int(width/2)+1), int(np.int(height/2)+1)))
+                    difference2 = tuple((int(-np.int(width/2)), int(-np.int(height/2))))
             
             # To find the rectang. corners we subtract 'width/2' and '-width/2'
             # from the 'central point' (or 'self.current', where the mouse is).
@@ -2083,7 +2084,7 @@ def imroiprop(I):
     Imask[Imask > 0] = 1
     
     # Preparing a vector to receive variables:
-    props = np.zeros(3, np.double)
+    props = np.zeros(3, 'float')
     
     # Multiplying by mask
     Itemp = I*Imask
@@ -2152,6 +2153,8 @@ def roi_stats(experiments, colors, **kwargs):
     stats : list
         A list with the statistics to be calculated. Only mean and standard
         deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
+    show : boolean
+        If 'True', print all the images processed. The default is 'False'.
     colormap : int
         The colormap to use while choosing the region of interest
         examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.
@@ -2160,6 +2163,7 @@ def roi_stats(experiments, colors, **kwargs):
     stats = kwargs.get('stats', ['mean', 'std'])
     images_dir = kwargs.get('images_dir', None)
     save_dir = kwargs.get('save_dir', None)
+    show = kwargs.get('show', False)
     
     ## Display a message to choose the folder the folders
     # Create the root window and hide it
@@ -2229,12 +2233,22 @@ def roi_stats(experiments, colors, **kwargs):
                 asw = 2
                 while asw != 1:
                     # With the next command the user can circulate the lesion
-                    [Imask, temp] = polyroi(Itemp, cmap = colormap,
+                    [Imask, points] = polyroi(Itemp, cmap = colormap,
                                                   window_name = f'Select the region of interest for {folder} / {exp}')
                     # Then the box dialog pop up itself:
                     asw = ctypes.windll.user32.MessageBoxW(0,question,'Question', 1)
-                # Calculating the measure defined in 'stast'
                 
+                # Printing the image, if 'show = True'
+                if show:
+                    plt.subplots()
+                    plt.imshow(Itemp)
+                    points.append(points[0])
+                    points = np.asarray(points)
+                    plt.plot(points[:, 0], points[:, 1])
+                    plt.tight_layout()
+                    plt.show()
+                
+                # Calculating the measures defined in 'stast'
                 if 'gray' in colors:
                     if 'mean' in stats:
                         dados[f'{exp} - mean gray'].append(np.mean(Itemp[Imask>0]))
@@ -2310,7 +2324,7 @@ def imchoose(images, cmap):
     cmap: Chose the prefered pyplot colormap (it is a 'string' variable). Use
           'None' for color or grayscale image. Some colormap exemples: pink,
           CMRmap, gray, RdGy, viridis, terrain, hsv, jet, etc.
-    chosen: A 'np.int' column vector with '1' for a chosen image, and '0'
+    chosen: A 'int' column vector with '1' for a chosen image, and '0'
             otherwise, in the column position corresponpding the image
             position. OBS: 'len(chosen) = len(images)'.
 
@@ -2384,7 +2398,7 @@ def imchoose(images, cmap):
                     plt.pause(2)
         except: pass
     plt.close(fig)
-    return np.array(chosen,np.int)
+    return np.array(chosen, 'int')
 
 
 
@@ -2582,69 +2596,112 @@ def imwarp(images, warp_matrix):
 
 
 
-def isoareas(folder, numb, **kwargs):
-    '''Integrate pixels in isoareas defined by the mouse.
+def roi_stats_in_detph(folder, numb, **kwargs):
+    '''This function loads all the images inside a folder, define a region of
+    interest inside each image (using two lines), devide this region in various
+    equally spaced areas (isoareas), and calculates statistics for the pixels'
+    intensity in each of these area, following a particular direction (going
+    from one of the lines defined to the other one).
     
-    [F, Fi] = isoareas(folder, numb)
+    Applications:
+        Calculate fluorescence inside a tumor, as a function of depth, in his-
+        tological slides.
+        Microscopy, medical imaging, or material science, application that cal-
+        culates pixels' statistics for different position in a given direction.
     
-    folder: folder in which there are the images we want to process.
-    numb: the number of isoareas you want to.
-    beep: if equal True, we have a beep after each image processed.
-    
-    F[n,0]: tumor thickness of isoarea number 'n'
-    F[n,1]: mean pixel value of isoarea number 'n'
-    F[n,2]: standard deviation for all pixels in isoarea number 'n'.
-    F[n,3]: mode for pixel values of isoarea 'n'
-    F[n,4]: median of pixel values for isoarea 'n'
-    Fi: 'F' interpolated with a constant distance step of 0.83*10^-6.
-    
-    This program is used to calculate the mean and the standar deviation for
-    the pixels finded in the intersection between a ROI (region of interest)
-    and the isoareas chosen by user. The isoareas will be chosen by the user by
-    the left and right isolines that delimitat it.
-    
-    First: choose (with left button clicks in mouse) the points that delimit
-    the first isoline, in the side of epidermis.
-    
-    Second: choose the points that delimit the last isoline, on the side of
-    dermis (inner part).
-    
-    Third: choose a ROI (region of interest) in which the pixel values will be
-    evaluated (the pixel values will be evaluated inside this ROI for each iso-
-    area calculated, I mean: ther will be caluculated the pixel values for the
-    intersection between each isoarea with the chosen ROI).
-    
-    Fourth: choose a line in the 'depth' direction (to show to the program what
-    is depth).
-    '''
-    # First, we load all the images
-    I = load_gray_images(folder, -1)
-    
-    # Obtaining the pixel size of each pixel
-    pixel_size = kwargs.get('pixel_size')
-    
-    # Uncomment if you need a beep
-    beep = kwargs.get('beep')
-    
-    # If the user doesn't enter with a pixel_size value, make 'pixel_size=1'.
-    if pixel_size == None:
-        pixel_size = 1
-    
-    # Creating empty lists for fluorecence ('F') and output images ('Iout').
-    F = []
-    Iout = []
-    
-    # Then we start a loop to calculate for all images in 'folder'.
-    for m in range(0,len(I)):
-        # First, we extract the 'm' image from folder.
-        I1 = np.asarray(I[m])
+    Usage example:
+        # Choose the folder where the images are
+        folder = r'C:/Users/user/data'
         
-        # Just to show the begining image
-        fig, ax = plt.subplots()
-        im = ax.imshow(I1, cmap = "pink")
-#        ax.title('This is I1 image')
-        fig.colorbar(im)
-        plt.show()
+        # Choose the number of isoareas to calculate
+        numb = 10
+        
+        # Call the function, defining the channels to enter in the statistics
+        dictionary = roi_stats_in_detph(folder, numb, channels=[1, 2, 3])
+    
+    Detailed explanation:
+        
+    1. Loading: This function will enter the folder difined in the variable
+    'folder', as in the above example, and process all the images inside it.
+    
+    2. Choosing Lines: Then you will choose two lines (the front line and the
+    back one), using a graphical user interface (GUI). These lines will define
+    the region where the statistics will be calculated.
+    
+    3. Isoareas: The closed region defined by the two lines drawn by the user
+    will be separated into various equally spaced lines (isolines). The area
+    defined between two adjascent 'isolines' will be called an 'isoarea'.
+    
+    4. Statistics in a Particular Direction: After that, a detailed statistics
+    will be calculated for each isoarea (mean, standard deviation, mode, median
+    and entropy), following a particular direction: going from the front line
+    to the back line. The number of isoareas is defined in 'numb'.
+    
+    
+    Input Parameters
+    ----------------
+    folder : string
+        The directory where the images you want to process are.
+    
+    numb : integer
+        The number of isoareas you want to calculate and process.
+    
+    Optional Parameters (kwargs)
+    ----------------------------
+    channels : list
+        List here all the channels to be processed, e.g. 'channels = [1, 2, 3]'
+        to process all the three channels of an image. Default value is '[1]'.
+        In the case of grayscale images, you can use 'channels = [1]'.
+    
+    pixel_size : float or integer (default = 1.0)
+        Enter the physical size discribed by a pixel. For example, if each
+        pixel represents a size of 0.83 micrometers in the image (for a micro-
+        scope image), than choose 'pixel_size = 0.83e-6'. Default value is 1.0.
+    
+    show : boolean
+        Choose 'True' to visualize each image processed, with its isoareas.
+    
+    Returns (Outputs)
+    -----------------
+    dictionary : dictionary
+        This function returns a dictionary with the statistics calculated for
+        each channel selected in the variable 'channels'.'''
+    
+    # Obtaining the channels the user wants to process
+    channels = kwargs.get('channels', [1])
+    channels = np.asarray(channels)
+    
+    # Obtaining the physical image size of each pixel
+    pixel_size = kwargs.get('pixel_size', 1)
+    
+    # Verifying if it is a test to print some images and some data
+    test = kwargs.get('test')
+    
+    # If 'show = True', print each processed image for user's visualizagion
+    show = kwargs.get('show')
+    
+    # Reading image names
+    image_names = list_images(folder)
+    
+    # Then we start a loop to read and to process all images in 'folder'.
+    for m, name in enumerate(image_names):
+        # Reading images, whether in '.lsm' or not (may not prepared for gray lsm)
+        if ('.lsm' in name) or ('.LSM' in name):
+            I = read_lsm(os.path.join(folder, name))
+        else:
+            I = cv2.imread(os.path.join(folder, name), cv2.IMREAD_COLOR)
+            I = cv2.cvtColor(I, cv2.COLOR_BGR2RGB)
+        
+        # Verifying which channel will be used, and saving it to the 'I1' variable
+        if (1 in channels) and (len(channels)==1):
+            I1 = I[:, :, 0]
+        elif (2 in channels) and (len(channels)==1):
+            I1 = I[:, :, 1]
+        elif (3 in channels) and (len(channels)==1):
+            I1 = I[:, :, 2]
+        else:
+            # First, we extract the 'm' image from the folder.
+            I1 = cv2.cvtColor(I, cv2.COLOR_RGB2GRAY)
         
         # Choosing the ROI of the first function.
         window = 'Choose a ROI for the side of epidermis (outside)'
@@ -2660,81 +2717,82 @@ def isoareas(folder, numb, **kwargs):
         window = 'Choose a ROI for the side of dermis (inner part)'
         [Itemp, points2] = polyroi(I2, cmap = cv2.COLORMAP_PINK,
                                    window_name = window)
-        points2 = np.asarray(points2)  # 'polylines' function require in array.
+        # 'polylines' needs points as an array.
+        points2 = np.asarray(points2)
+        
+        # If the user choose 'points1' in one direction and 'points2' in another
+        # one, we need to reverse the 'points2' direction to the code works
+        if np.linalg.norm(points1[0, :]-points2[0, :]) > np.linalg.norm(points1[0, :]-points2[-1]):
+            points2 = points2[::-1]
+        
+        # The first and the last points of the first line will be used in 2nd line
         points2[0,:] = points1[0,:]
         points2[-1,:] = points1[-1,:]
         
+        # Printing testing image, if in testing is activated
+        if test:
+            cv2.polylines(I2, [points2], False, (220,200,200), 3)
+            plt.subplots()
+            plt.title('I2 with points2')
+            plt.imshow(I2)
+            plt.axis('off')
+            plt.tight_layout()
+            plt.show()
         
-        # Drawing the chosen points in an image, and plotting them.
-        I3 = I2.copy()
-        cv2.polylines(I3, [points2], False, (200,200,220), 3)
-        plt.subplots()
-        plt.imshow(I3)
-        plt.title('This is I3 image')
+        # Next few lines will interpolate the points with the same number of pixels
+        # of the image height. In order to make the isolines, it is very important
+        # that 'points1' and 'points2' have the same number of points
+        points1a = np.zeros([int(abs(points1[-1,0]-points1[0,0])),2], 'float')
+        points2a = np.zeros([int(abs(points1[-1,0]-points1[0,0])),2], 'float')
         
-        # If we mantain the 'x' and 'y' of 'points', it will not be a function,
-        # because for the same value 'x' we have more than 1 value of 'y'. So
-        # we change 'x' and 'y' positions in 'points'
-        points1a = np.zeros([len(points1[:,0]),len(points1[0,:])], np.double)
-        points2a = np.zeros([len(points2[:,0]),len(points2[0,:])], np.double)
-        points1a[:,1] = points1[:,0]
-        points1a[:,0] = points1[:,1]
-        points2a[:,1] = points2[:,0]
-        points2a[:,0] = points2[:,1]
+        tck1, u1 = splprep([points1[:,0], points1[:,1]], s=0)
+        tck2, u2 = splprep([points2[:,0], points2[:,1]], s=0)
         
-        plt.subplots()
-        plt.plot(points1a[:,0],points1a[:,1])
-        plt.plot(points2a[:,0],points2a[:,1])
-        plt.title('points1a[:,0],points1a[:,1]\npoints2a[:,0],points2a[:,1]')
+        points1a[:,0], points1a[:,1] = splev(np.linspace(0, 1, len(points1a[:,1])), tck1)
+        points2a[:,0], points2a[:,1] = splev(np.linspace(0, 1, len(points1a[:,1])), tck2)
         
-        # In the next steps we'll interpolate the points we have.
-        div = 0.5       # Defining the increment between 'x' values.
-        points1b = np.zeros([np.int(abs(points1a[-1,0]-points1a[0,0])/div),2],
-                             np.double)
-        points2b = np.zeros([np.int(abs(points1a[-1,0]-points1a[0,0])/div),2],
-                             np.double)
-        f_points1a = interpolate.interp1d(points1a[:,0],points1a[:,1])
-        f_points2a = interpolate.interp1d(points2a[:,0],points2a[:,1])
-        points1b[:,0] = np.arange(min(points1a[0,0], points1a[-1,0]),
-                                  max(points1a[0,0], points1a[-1,0]), div)
-        points2b[:,0] = points1b[:,0]
-        points1b[:,1] = f_points1a(points1b[:,0])
-        points2b[:,1] = f_points2a(points2b[:,0])
+        # Printing some images if testing is activated
+        if test:
+            plt.subplots()
+            plt.plot(points1a[:,0], points1a[:,1])
+            plt.plot(points2a[:,0], points2a[:,1])
+            plt.plot(points1[:,0], points1[:,1], '.')
+            plt.plot(points2[:,0], points2[:,1], '.')
+            plt.tight_layout()
+            plt.show()
+            
+            fig, ax = plt.subplots(1, 2)
+            ax[0].imshow(I2)
+            ax[0].axis('off')
+            Itemp = I1.copy()
+            Itemp = cv2.polylines(Itemp, [points1a.astype('int')], False, (220,200,200), 3)
+            Itemp = cv2.polylines(Itemp, [points2a.astype('int')], False, (220,200,200), 3)
+            Itemp = cv2.polylines(Itemp, [points1.astype('int')], False, (220,200,200), 3)
+            Itemp = cv2.polylines(Itemp, [points2.astype('int')], False, (220,200,200), 3)
+            ax[1].imshow(Itemp)
+            ax[1].axis('off')
+            plt.tight_layout()
+            plt.show()
         
+        # Joining all isolines in just one variable (better to handle), using the
+        # lines chosen above (left and right lines). It has a size of '2*numb+2'
+        # because each line is defined by 2 columns, and we need one lines more to
+        # define 'numb' isoareas (e.g. 2 isoareas needs 3 lines to be defined).
+        isolines = np.zeros([len(points1a[:,0]), 2*numb+2], 'float')
+        diff = (points2a - points1a)/numb
+        isolines[:,0:2] = points1a[:,0:2]
+        for n in range(numb+1):
+            isolines[:, n*2] = points1a[:, 0] + n*diff[:, 0]
+            isolines[:, n*2+1] = points1a[:, 1] + n*diff[:, 1]
         
-        # We have to put all the isolines in one variable (better to handle).
-        isolines = np.zeros([np.int(abs(points1a[-1,0]-points1a[0,0])/div),
-                             2*numb+2], np.double)
-        # The first line is the 'points1b' that we already defined.
-        isolines[:,0:2] = points1b[:,0:2]
-        # The last line is the 'points2b' that we already defined.
-        isolines[:,-2:] = points2b[:,0:2]
-        
-        # Here we find the isolines between the borders.
-        for n in range(0,numb-1):
-            isolines[:,2+n*2] = points1b[:,0]
-            isolines[:,3+n*2] = points1b[:,1]+(n+1)*((points2b[:,1]-points1b[:,1])/numb)
-        
-        # Plotting the isolines
-        plt.subplots()
-        plt.title('isolines[:,0+n*2], isolines[:,1+n*2]')
-        for n in range(0,numb+1):
-            plt.plot(isolines[:,0+n*2], isolines[:,1+n*2], linewidth = 3, color = "white")
-        plt.show
-        
-        # Changing, again, 'x' with 'y' to plot the isolines in the figure.
-        isolines2 = np.zeros([np.int(abs(points1a[-1,0]-points1a[0,0])/div),
-                             2*numb+2], np.double)
-        for n in range(0,numb+1):
-            isolines2[:,0+n*2] = isolines[:,1+n*2]
-            isolines2[:,1+n*2] = isolines[:,0+n*2]
-        
-        # Plotting the isolines
-        plt.subplots()
-        plt.title('isolines2[:,0+n*2], isolines2[:,1+n*2]')
-        for n in range(0,numb+1):
-            plt.plot(isolines2[:,0+n*2], isolines2[:,1+n*2], linewidth = 3, color = "white")
-        plt.show
+        # If testing, print the isolines
+        if test:
+            plt.subplots()
+            plt.title('isolines = points1a and points2a')
+            for n in range(0, numb+1):
+                plt.plot(isolines[:, 2*n], isolines[:, 2*n+1])
+            plt.tight_layout()
+            plt.show()
         
         # The next steps create the images with the ROIs of isolines. 'I4' is
         # only to user see, and 'I5' is what we'll use.
@@ -2742,204 +2800,173 @@ def isoareas(folder, numb, **kwargs):
         I5 = []
         # Defining the variable that will help us to "paint" the image 'I4'.
         factor = np.round(250/numb)
-        if factor > 10:
-            factor = 10
-        # This two "for's" is actually to create the images.
-        Itemp1 = np.zeros([np.shape(I1)[0],np.shape(I1)[1]], np.uint8)
-        for n in range(0,numb):
-            pts_temp = np.concatenate((isolines2[:,0+n*2:2+n*2],
-                                       isolines2[::-1,2+n*2:4+n*2]))
+        # Using 'For' loops to create the images I4 (to see) and I5 (to calculate)
+        Itemp1 = np.zeros(np.shape(I1), 'uint8')
+        for n in range(0, numb):
+            # We use a pair of isolines to create a closed isoarea with 'fillPoly'
+            pts_temp = np.concatenate((isolines[:,0+n*2:2+n*2],
+                                       isolines[::-1,2+n*2:4+n*2]))
             pts_temp = np.matrix.round(pts_temp)
-            pts_temp = np.array(pts_temp, np.int)
+            pts_temp = np.array(pts_temp, 'int')
             cv2.fillPoly(Itemp1, [pts_temp],
                          (factor*(n+1),factor*(n+1),factor*(n+1)))
-        for n in range(0,numb):
-            Itemp2 = np.zeros([np.shape(I1)[0],np.shape(I1)[1]], np.uint8)
-            pts_temp = np.concatenate((isolines2[:,0+n*2:2+n*2],
-                                       isolines2[::-1,2+n*2:4+n*2]))
+        # I4 and Itemp1 are just for user view, next are the ones to really calcul.
+        for n in range(0, numb):
+            Itemp2 = np.zeros(np.shape(I1), 'uint8')
+            pts_temp = np.concatenate((isolines[:,0+n*2:2+n*2],
+                                       isolines[::-1,2+n*2:4+n*2]))
             pts_temp = np.matrix.round(pts_temp)
-            pts_temp = np.array(pts_temp, np.int)
+            pts_temp = np.array(pts_temp, 'int')
             cv2.fillPoly(Itemp2, [pts_temp], (1,1,1))
             I5.append(Itemp2)
         
         # Transforming 'I4' and 'I5' from list to 'numpy array'.
-        I4 = I1.copy() + ((0.25*np.max(I1))/np.max(Itemp1))*Itemp1
+        I4 = I1.copy()
+        I4 = scale255(I4)
+        I4 = 0.65*I4 + 0.35*Itemp1
         I4 = np.matrix.round(I4)
-        I4 = np.array(I4, np.uint8)
+        I4 = np.array(I4, 'uint8')
         I5 = np.asarray(I5)
         
-        plt.subplots()
-        plt.imshow(I4)
-        plt.axis('off')
-        plt.title('Plotting I4 image')
+        # Printing the final image for user's verification, if 'show = True'
+        if show:
+            plt.subplots()
+            plt.imshow(I4, cmap='RdGy')
+            plt.axis('off')
+            plt.title('Plotting I4 image')
+            plt.tight_layout()
+            plt.show()
         
-        im, ax = plt.subplots(1,numb)
-        for n in range(0,numb):
-            ax[n].imshow(I5[n])
-            ax[n].axis('off')
-        plt.title('Plotting all I5 images')
+        # If testing, printing one image more
+        if test:
+            fig, ax = plt.subplots(1,numb)
+            fig.suptitle('I5')
+            for n in range(0,numb):
+                ax[n].imshow(I5[n], cmap='RdGy')
+                ax[n].axis('off')
+            plt.tight_layout()
+            plt.show()
         
         # Chosing the region where fluorescence will be calculated (fluorescen-
         # ce will be calculated inside this region ('Imask'), in each isoarea).
-        window = 'Choose the region in which fluorescence will be calculated'
+        window = 'Choose the mask region, where the pixels will be evaluated'
         [Imask, points3] = polyroi(I4, cmap = cv2.COLORMAP_PINK,
                                              window_name = window)
         # We need '1' and '0' pixels values to be the ROI that will multiply
         # our isoareas.
         Imask[Imask > 0] = 1
         
+        ## The mean width between isoareas will be estimated using the magnitude of
+        # the vector pointing to the mean distance between isoareas ('vector1' in
+        # the lines below) and the vector pointing to the depth ('vector2' bellow).
+        # The width will be estimated by the part of 'vector1' that points to the
+        # 'vector2' direction (the distance between isoareas tha points to depth)
         
-        # In order to calculate the real width between the isoareas, we need to determine
-        # the direction of depth (a vector from outside of skin, entering in the tumor
-        # deeper regions). This vector will be drawn with next 'polyroi'
-        window = 'Choose a vector entering in tumor (determine what is depth)'
-        [Itemp, points4] = polyroi(I1, cmap = cv2.COLORMAP_PINK, window_name = window)
-        # Extracting the first two points fron 'points4'.
-        depth_line = np.array([np.asarray(points4[0]), np.asarray(points4[1])], np.int)
-        # Then we find the coefficients of a line curve 'ax+b'.
-        coefficients = np.polyfit(depth_line[:,0], depth_line[:,1], 1)
+        # First, let us find the center of mass of all ROIs in image I5 using scipy
+        centers = []
+        for image in I5:
+            center = center_of_mass(image)
+            centers.append(center)
         
-        # Now we create 2 images, one is the sum of all isoareas (Itemp1), and
-        # other one is the sum of all isoareas times the chosen ROI (Itemp2).
-        vect1 = []
-        vect2 = []
-        for n in range(0,len(I5)):
-            Itemp1 = np.zeros((np.shape(I1)), np.uint8)
-            Itemp2 = np.zeros((np.shape(I1)), np.uint8)
-            Itemp1 = I1*I5[n]
-            Itemp2 = I1*I5[n]*Imask
-         
-            # Now we define a line pointing the direction of the 'depth', and 
-            # see when this line intercept I1*I5*Imask.
-            line = np.zeros((int(len(I1[0,:])/0.1),2), np.double)
-            line[:,0] = np.arange(0,len(I1[0,:]),0.1)
-            vector1 = []    # Pixels that belong to 'line' and to 'I5*Imask'
-            vector2 = []    # Pixels that belong to 'line' and to 'I5*Imask
-            for k in range(0,int(len(I1[:,0]))):
-                line[:,1] = coefficients[0]*line[:,0] + k
-                Itemp = np.zeros((np.shape(I1)), np.uint8)
-                # Defining the points to draw.
-                points5 = np.asarray(np.round((line[0,:],line[-1,:])), np.int)
-                cv2.polylines(Itemp, [points5], False,(1,1,1),1)
-                value1 = np.count_nonzero(Itemp*Itemp1)
-                value2 = np.count_nonzero(Itemp*Itemp2)
-                if value1 > 0:             # If it is true, 'line' intercept I1*I5.
-                    if value1 == value2:    # If it is true, 'line' intercept I1*I5*Imask.
-                        vector1.append(value2)
-                        vector2.append(0)
-                    elif value1 > value2 and value2 > 0: # If true, 'line' intercept 
-                        vector1.append(0)             # I1*I5*Imask, but not in all the
-                        vector2.append(value2)        # pixels belonging to I1*I5
-                    elif value1 > value2 and value2 == 0:
-                        vector1.append(0)           # If true, 'line'
-                        vector2.append(0)           # does not intercept nothing.
-                else:
-                    vector1.append(0)
-                    vector2.append(0)
-           
-            vector1 = np.asarray(vector1)
-            vector2 = np.asarray(vector2)
-            vect1.append(vector1)
-            vect2.append(vector2)
+        # Printing the centers of mass inside the image for testing
+        if test:
+            plt.subplots()
+            plt.title('Center of Mass for Each ROI')
+            plt.imshow(I4, cmap='RdGy')
+            for center in centers:
+                plt.plot(int(center[1]), int(center[0]), marker='.', markersize=10)
+            plt.axis('off')
+            plt.tight_layout()
+            plt.show
         
-        vect1 = np.asarray(vect1)
-        vect2 = np.asarray(vect2)
+        # Finding the mean vectorial distance between centroids. This will give us
+        # the mean distance between isoareas and its direction (used in the future)
+        vectors = []
+        last = centers[0]
+        # Finding distance between each pair of adjascent center/isoarea
+        for center in centers[1:]:
+            vectors.append(np.array(center)-np.array(last))
+            last = center
+        vectors = np.asarray(vectors)
+        # Averaging distances to find final mean distance between isoareas/centers
+        vector1 = np.mean(vectors, axis=0)
         
-        # The next lines is to find the mean of distance between isoareas:
-        mean1 = []
-        for n in range(0,len(vect1[:,0])):
-            sum_temp = vect1[n,:].sum()
-            num_temp = np.count_nonzero(vect1[n,:])
-            mean_temp = sum_temp/num_temp
-            mean1.append(mean_temp)
-        mean2 = np.mean(np.array(mean1))
-        # Finally, defining the mean width, in 'meters' for each isoarea. The
-        # term 'np.sqrt((1+coef[0]**2))' means that when we have diagonal
-        # pixels, we have greater distances, it comes from line equation.
-        width = np.sqrt((1+coefficients[0]**2))*pixel_size*mean2
-        plt.subplots()
-        for n in range(0,len(vect1[:,0])):
-            plt.plot(vect1[n,:])
-#            plt.plot(vect2[n,:])
+        # Here, the depth direction will be estimated by the difference between the
+        # first and the last point of the isolines. Note that the points are
+        # defined as (x axis, y axis) in Python, which is different from images,
+        # which are defined as (line, column). That is the because the depth
+        # direction is defined as bellow (which looks like to beperpendicular)
+        vector2 = isolines[0:1,0:2] - isolines[len(isolines)-1::,0:2]
+        vector2 = vector2[0]
         
-        # Calculating fluorescence.
-        Iout0 = []
-        F0 = np.zeros([numb,5], np.double)
-        for n in range(0,numb):
-            Itemp = I1*I5[n]*Imask
-            Iout0.append(Itemp)
-            F0[n,0] = n*width + width/2
-            F0[n,1] = Itemp[Itemp!=0].mean()
-            F0[n,2] = Itemp[Itemp!=0].std()
-            F0[n,3] = stats.mode(Itemp[Itemp!=0], axis = None)[0]
-            F0[n,4] = np.median(Itemp[Itemp!=0])
-        F.append(F0)
-        Iout0 = np.asarray(Iout0)
-        Iout.append(Iout0)
+        ## Finding the cosine between 'vector1' and 'vector2' to calculate width
+        # First, calculating the dot product
+        dot_product = np.dot(vector1, vector2)
         
-        # If we need a beep:
-        if beep == True:
-            frequency = 2500  # Set Frequency To 2500 Hertz
-            duration = 300    # Set Duration To 1000 ms == 1 second
-            for n in range(0,3):
-#                time.sleep(0.0005)
-                winsound.Beep(frequency, duration)
+        # Then calculating the magnitudes
+        mag1 = np.linalg.norm(vector1)
+        mag2 = np.linalg.norm(vector2)
         
-    F = np.asarray(F)
+        # Calculating the cosine
+        cos_angle = dot_product / (mag1 * mag2)
+        cos_angle = np.clip(cos_angle, -1, 1)
+        # Calculating angle in radians and transforming to degrees
+        angle = np.arccos(cos_angle)
+        
+        # Mean width can be estimated by finding the part of the 'vector1' that is
+        # in the direction of depth (or perpendic. to 'vector2') times 'pixel_size'
+        width = abs(np.cos(angle)*mag1*pixel_size)
+        
+        # Creating a dictionary to save the data (based on the channels choosen)
+        dictionary = {'width': []}
+        for channel in channels:
+            dictionary[f'mean of CH{channel}'] = []
+            dictionary[f'std of CH{channel}'] = []
+            dictionary[f'mode of CH{channel}'] = []
+            dictionary[f'median of CH{channel}'] = []
+            dictionary[f'entropy of CH{channel}'] = []
+        
+        # Preparing data to be saved on 'name.csv'
+        for n in range(0, numb):
+            dictionary['width'].append(n*width + width/2)
+            for channel in channels:
+                # Since Python starts with '0', we subtracts '1' from the channel
+                Itemp = I[:, :, channel-1]*I5[n]*Imask
+                dictionary[f'mean of CH{channel}'].append(Itemp[Itemp!=0].mean())
+                dictionary[f'std of CH{channel}'].append(Itemp[Itemp!=0].std())
+                dictionary[f'mode of CH{channel}'].append(stats.mode(Itemp[Itemp!=0], axis = None)[0])
+                dictionary[f'median of CH{channel}'].append(np.median(Itemp[Itemp!=0]))
+                dictionary[f'entropy of CH{channel}'].append(shannon_entropy(Itemp[Itemp!=0]))
+        
+        # Entering folder 'results' and saving the data to 'name.csv'
+        os.chdir(folder)
+        path = 'results'
+        if os.path.exists(path) is not True:
+            os.mkdir(path)
+        os.chdir(path)
+        # Actually saving the data
+        df = pd.DataFrame(dictionary, columns = list(dictionary.keys()))
+        name = name.split('.')[0]
+        df.to_csv(f'{name}.csv', index = False)
     
-    # In order to find an interpolated function for 'F' with equal steps in 
-    # depth (being depth = F[n][:,m]), we define 'Fi', the interpolated 'F'.
-    Fi = []
-    for n in range(0,len(F)):
-        # To know the number of points we do the next lines:
-        pixel_width = 0.83e-6
-        number_temp = np.int((F[n][-1,0] - F[n][0,0])/pixel_width)
-        Fi_temp = np.zeros([number_temp, 2], np.double)
-        Fi_temp[:,0] = np.arange(F[n][0,0], F[n][0,0]+number_temp*pixel_width,
-                                 pixel_width)
-        # Defining the function with 'interp1d'.
-        function_Fi = interpolate.interp1d(F[n][:,0], F[n][:,1])
-        Fi_temp[:,1] = function_Fi(Fi_temp[:,0])
-        Fi.append(Fi_temp)
-    
-    
-    # To save all the data, we first enter in the folder where te images are.
-    os.chdir(folder)
-    path = 'results'
-    if os.path.exists(path) is not True:
-        os.mkdir(path)
-    os.chdir(path)
-    
-    # First, we save the 'txt' files
-    path1 = 'txt-files'
-    if os.path.exists(path1) is not True:
-        os.mkdir(path1)
-    os.chdir(path1)
-    # Transforming 'F' from 'list' to 'numpy array'.
-    
-    # Actually saving the files.
-    for n in range(0,len(F)):
-        np.savetxt('F'+str(n)+'.txt', F[n])
-        np.savetxt('Fi'+str(n)+'.txt', Fi[n])
-    
-    # Second, we save the 'numpy' files.
-    os.chdir(folder)
-    os.chdir(path)
-    path2 = 'numpy-files'
-    if os.path.exists(path2) is not True:
-        os.mkdir(path2)
-    os.chdir(path2)
-    # Actually saving the files.
-    for n in range(0,len(F)):
-        np.save('F'+str(n), F[n])
-        np.save('Fi'+str(n), Fi[n])
-    
-    return F, Fi
+    # Returning the dictionary
+    return dictionary
 
 
 
 def good_colormaps(image):
-    '''This function show a list of the good 'matplotlib.pyplot' colormaps:\n
+    '''This function show a list of the good 'matplotlib.pyplot' colormaps:
+    
+    imfun.good_colormaps(image)
+    
+    Input Parameter
+    ---------------
+    image : numpy.ndarray
+        Image to be printed in different colormaps. It should be a grayscale
+        image in the format (H, W), where H is the higher and W is the image
+        width.
+    
+    Some of the colormaps:
     prism
     terrain
     flag ** (a lot of contrast)
