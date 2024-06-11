@@ -31,7 +31,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `roi_stats_in_detph`: choose a region, and get the detailed statistics of this region, as a function of a given direction defined by the user. Applications: statistics of pixels from a tumor, from surface to the depth, e.g. in microscope fluorescence of histological slides (see an example in the next gif image):
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MarlonGarcia/imfun/main/media/roi_stats_in_detph.gif" alt="me" width="350" />
+  <img src="https://raw.githubusercontent.com/MarlonGarcia/imfun/main/media/roi_stats_in_detph.gif" alt="me" width="320" />
 </p>
     
 #### 2.2. Image Alignment and Transformation
