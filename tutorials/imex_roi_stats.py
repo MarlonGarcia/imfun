@@ -67,8 +67,8 @@ colormap = cv2.COLORMAP_PARULA
 # Other good colormaps: "cv2.COLORMAP_PINK", "cv2.COLORMAP_HSV", "cv2.COLORMAP_BONE"
 
 # Run this code to choose the folder by yourself
-imfun.roi_stats(experiments, colors, colormap=colormap)
+# imfun.roi_stats(experiments, colors, colormap=colormap)
 
 # Run this when you difined the directories in the variables 'images_dir' and 'save_dir'
-# imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, colormap=colormap)
+imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, colormap=colormap)
 

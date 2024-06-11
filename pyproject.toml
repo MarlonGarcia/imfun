@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "image-functions"
-version = "0.1.3"
+version = "0.1.4"
 description = "Image Processing Functions"
 readme = "README.md"
 authors = [{ name = "Marlon Rodrigues Garcia", email = "marlon.garcia@unesp.br" }]
@@ -22,6 +22,7 @@ dependencies = [
     "opencv-contrib-python",
     "matplotlib",
     "scipy",
+    "pandas",
     "pynput",
     "pandas",
     "tifffile",

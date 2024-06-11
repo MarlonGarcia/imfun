@@ -27,7 +27,8 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `choose_points`: GUI to interact with the user to choose points in an image
 - `imchoose`: function to choose images in a given set of images (with GUI)
 - `imroiprop`: getting properties from an image ROI
-- `roi_stats`: get statistics (mean and std) from images of multiple a experiments (important!)
+- `roi_stats`: get statistics from a region choosen by the user, for images of multiple experiments (important!)
+- `roi_stats_in_detph`: get detailed statistics of pixels vs a given direction defined by the user (important!)
     
     
 #### 2.2. Image Alignment and Transformation
@@ -64,7 +65,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.3
+pip install image-functions==0.1.4
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
