@@ -2632,7 +2632,13 @@ def roi_stats_in_detph(folder, numb, **kwargs):
     will be separated into various equally spaced lines (isolines). The area
     defined between two adjascent 'isolines' will be called an 'isoarea'.
     
-    4. Statistics in a Particular Direction: After that, a detailed statistics
+    4. The Mask: An additional mask will be choosen by the user. Only the
+    pixels inside this mask will be processed. Use this mask if you wants to
+    select just part of the region of interest defined by the two lines drawn
+    (to process just part of the isoareas). Otherwise, choose the intire region
+    of interest to process all the selected pixels (all isoareas).
+    
+    5. Statistics in a Particular Direction: After that, a detailed statistics
     will be calculated for each isoarea (mean, standard deviation, mode, median
     and entropy), following a particular direction: going from the front line
     to the back line. The number of isoareas is defined in 'numb'.
@@ -2704,7 +2710,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
             I1 = cv2.cvtColor(I, cv2.COLOR_RGB2GRAY)
         
         # Choosing the ROI of the first function.
-        window = 'Choose a ROI for the side of epidermis (outside)'
+        window = 'Choose the front line'
         [Itemp, points1] = polyroi(I1, cmap = cv2.COLORMAP_PINK,
                                    window_name = window)
         points1 = np.asarray(points1)  # 'polylines' function require in array.
@@ -2714,7 +2720,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         cv2.polylines(I2, [points1], False, (220,200,200), 3)
         
         # Choosing the ROI of the second function.
-        window = 'Choose a ROI for the side of dermis (inner part)'
+        window = 'Choose the back line'
         [Itemp, points2] = polyroi(I2, cmap = cv2.COLORMAP_PINK,
                                    window_name = window)
         # 'polylines' needs points as an array.
@@ -2849,7 +2855,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         
         # Chosing the region where fluorescence will be calculated (fluorescen-
         # ce will be calculated inside this region ('Imask'), in each isoarea).
-        window = 'Choose the mask region, where the pixels will be evaluated'
+        window = 'Choose a mask where the pixels will be evaluated'
         [Imask, points3] = polyroi(I4, cmap = cv2.COLORMAP_PINK,
                                              window_name = window)
         # We need '1' and '0' pixels values to be the ROI that will multiply

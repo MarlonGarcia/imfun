@@ -33,7 +33,13 @@ the region where the statistics will be calculated.
 will be separated into various equally spaced lines (isolines). The area
 defined between two adjascent 'isolines' will be called an 'isoarea'.
 
-4. Statistics in a Particular Direction: After that, a detailed statistics
+4. The Mask: An additional mask will be choosen by the user. Only the
+pixels inside this mask will be processed. Use this mask if you wants to
+select just part of the region of interest defined by the two lines drawn
+(to process just part of the isoareas). Otherwise, choose the intire region
+of interest to process all the selected pixels (all isoareas).
+
+5. Statistics in a Particular Direction: After that, a detailed statistics
 will be calculated for each isoarea (mean, standard deviation, mode, median
 and entropy), following a particular direction: going from the front line
 to the back line. The number of isoareas is defined in 'numb'.
