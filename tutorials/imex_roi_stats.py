@@ -90,4 +90,3 @@ colormap = cv2.COLORMAP_PARULA
 # Run the code below when you want to difine the directories in the variables
 # 'images_dir' and 'save_dir'. Using 'show=True', all images will be printed.
 imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, show=True, colormap=colormap)
-
