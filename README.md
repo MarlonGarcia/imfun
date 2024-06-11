@@ -28,7 +28,9 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `imchoose`: function to choose images in a given set of images (with GUI)
 - `imroiprop`: getting properties from an image ROI
 - `roi_stats`: get statistics from a region choosen by the user, for images of multiple experiments (important!)
-- `roi_stats_in_detph`: choose a region, and get the detailed statistics of this region, as a function of a given direction defined by the user. Applications: statistics of pixels from a tumor, from surface to the depth, e.g. in microscope fluorescence of histological slides (important!)
+- `roi_stats_in_detph`: choose a region, and get the detailed statistics of this region, as a function of a given direction defined by the user. Applications: statistics of pixels from a tumor, from surface to the depth, e.g. in microscope fluorescence of histological slides (see an example in the next gif image):
+
+![](https://github.com/MarlonGarcia/imfun/images/roi_stats_in_detph.gif)
     
     
 #### 2.2. Image Alignment and Transformation
