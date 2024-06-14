@@ -2,5 +2,5 @@
 
 from .__main__ import *
 
-# Version of the hyperspectral-imaging package
-__version__ = "0.1.4"
+# Version of the image-functions package
+__version__ = "0.1.5"

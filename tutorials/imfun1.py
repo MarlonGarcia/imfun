@@ -2862,11 +2862,11 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         # our isoareas.
         Imask[Imask > 0] = 1
         
-        ## The mean width between the isoareas will be estimated using two mag-
-        ## nitudes: the mean vectorial distance between isoareas ('vector1' in
-        ## next lines), and the vectorial distance pointing the depth (which is
-        ## perpendicular to 'vector2' in next lines). Width will be the part of
-        ## 'vector1' that is perpendicular to 'vector2'
+        ## The mean width between isoareas will be estimated using the magnitude of
+        # the vector pointing to the mean distance between isoareas ('vector1' in
+        # the lines below) and the vector pointing to the depth ('vector2' bellow).
+        # The width will be estimated by the part of 'vector1' that points to the
+        # 'vector2' direction (the distance between isoareas tha points to depth)
         
         # First, let us find the center of mass of all ROIs in image I5 using scipy
         centers = []

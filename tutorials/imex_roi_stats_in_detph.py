@@ -81,7 +81,9 @@ import imfun
 # Choosing the folder where the images are
 folder = r'C:\Users\marlo\Downloads\Widefield\Confocal'
 
-# Running the 'roi_stats_in_detph' function
+# Next we run the 'roi_stats_in_detph' function. This function is evaluated
+# with "pixel_size = 0.83e-6", which means that the physical size measured by a
+# pixel in the image has 0.83 micrometers (in Python, e-6 is 10^-6)
 dictionary = imfun.roi_stats_in_detph(folder, 7, channels=[1], pixel_size = 0.83e-6, show = True)
 
 
