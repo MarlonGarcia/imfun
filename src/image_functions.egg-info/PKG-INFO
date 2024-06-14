@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: image-functions
-Version: 0.1.4
+Version: 0.1.5
 Summary: Image Processing Functions
 Author-email: Marlon Rodrigues Garcia <marlon.garcia@unesp.br>
 License: MIT License
@@ -73,8 +73,11 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `imchoose`: function to choose images in a given set of images (with GUI)
 - `imroiprop`: getting properties from an image ROI
 - `roi_stats`: get statistics from a region choosen by the user, for images of multiple experiments (important!)
-- `roi_stats_in_detph`: choose a region, and get detailed statistics this region, as a function of a given direction defined by the user. Exemplo: statistics of fluorescence images of tumors from microscopes (important!)
-    
+- `roi_stats_in_detph`: choose a region, and get the detailed statistics of this region, as a function of a given direction defined by the user. Applications: statistics of pixels from a tumor, from surface to the depth, e.g. in microscope fluorescence of histological slides (see an example in the next gif image):
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MarlonGarcia/imfun/main/media/roi_stats_in_detph.gif" alt="me" width="320" />
+</p>
     
 #### 2.2. Image Alignment and Transformation
 
@@ -110,7 +113,7 @@ Library for image pre-processing, with functions to handle and prepare images fo
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.4
+pip install image-functions==0.1.5
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
