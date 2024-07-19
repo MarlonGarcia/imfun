@@ -17,8 +17,8 @@ library imports if there are problems during installation or loading.
 @author: Marlon Rodrigues Garcia
 @school: School of Engineering, Campus of Sao Joao da Boa Vista
 @instit.: Sao Paulo State University (Unesp)
-@contact: marlon.garcia@unesp.br'''
-
+@contact: marlon.garcia@unesp.br
+'''
 import numpy as np
 import cv2
 import os
@@ -103,7 +103,7 @@ def list_images(directory):
 
 
 
-def load_gray_images(folder, colormap):
+def load_gray_images(folder, **kwargs):
     """Loading grayscale images from 'folder'
     
     This function loads all the images from 'folder' directory, in grayscale
@@ -115,14 +115,18 @@ def load_gray_images(folder, colormap):
     is assigned.
     """
     I = []
+    # Standard colormap is grayscale
+    colormap = kwargs.get('colormap')
     flag1 = cv2.IMREAD_GRAYSCALE
+    # Listing images (usefull for when online drives put files in the folder)
+    image_names = list_images(folder)
     if colormap == -1 or colormap == None:
-        for filename in os.listdir(folder):
+        for filename in image_names:
             img = cv2.imread(os.path.join(folder, filename), flag1)
             if img is not None:
                 I.append(img)
     else:
-        for filename in os.listdir(folder):
+        for filename in image_names:
             img = cv2.imread(os.path.join(folder, filename), flag1)
             if img is not None:
                 img2 = cv2.applyColorMap(img, colormap)
@@ -395,6 +399,9 @@ class choose_points1(object):
 
 def choose_points(image, **kwargs):
     '''This function return the local of chosen points.
+    
+    Example:
+    -------
     [image_out, points] = choose_points(image, **cmap, **window_name, **show)
     
     cmap: Chose the prefered colormap. If 'None', image in grayscale.
@@ -439,69 +446,96 @@ def choose_points(image, **kwargs):
 
 
 
-def flat2im(flat, height, width):
-    ''' Convert 1D flat 'numpy-array' into an 2D image
-    I = flat2im(flat, height, width)
+def flat2im(flat, shape):
+    '''Converting a flat vector into an image. If the input flat vector has a
+    shape of `N x C`, the output image will be of shape `H, W, C`, where `N =
+    H * W` and C is the number of channels (1 for grayscale, 3 for RGB, or more
+    for a multidimensinal image).
     
-    flat: 1D array with size 'height*width'
-    I: output 2D image with shape 'height' by 'width'
-    '''
+    Example:
+    --------
+    image = flat2im(flat, shape)
     
-    # if flat have multichennels, we have to account for (e.g. RGB)
-    try: channels = np.shape(flat)[1]
-    except: channels = None
-    
-    if (channels == 1) or (channels == None):
-        I = np.zeros((height, width), np.uint8)
-        if channels == 1:
-            for l in range(0, height):
-                I[l,:] = flat[l*width:(l+1)*width, 0]
-        else:
-            for l in range(0, height):
-                I[l,:] = flat[l*width:(l+1)*width]
-    else:
-        I = np.zeros((height, width, channels), np.uint8)
-        for c in range(0, channels):
-            for l in range(0, height):
-                I[l,:,c] = flat[l*width:(l+1)*width, c]
-        
-    return I
-
-
-
-def im2flat(image):
-    '''
     Parameters
     ----------
-    image : np.array
-        A 2D or 3D numpy array (if not, the program try to convert)
-        This is a numpy image to be flatten.
+    flat : numpy.ndarray
+        Input flat vector of shape `N x C` where `N = height*width` and C is
+        the number of channels (1 for grayscale, 3 for RGB, etc.)
+    shape : tuple or list
+        Tuple or list containing the height and the width of the image:
+        `(height, width)`, for example `(2048, 1024)`
+    '''
+    # Transforming flat into a numpy.ndarray
+    flat = np.asarray(flat)
+    # If shape has more dimensions, extracting first 2
+    shape = shape[0:2]
+    # Verifying if user entered with wrong shapes for image, height or width
+    if flat.shape[0] != shape[0] * shape[1]:
+        raise ValueError(f'The flat vector does not have the correct size for {shape[0]} in height and {shape[1]} in width.')
+    
+    # Transforming the vector into an image after checking if it is in gray-
+    # scale or multichannel (which stands for RGB or more channels)
+    if len(flat.shape) == 1:
+        image = flat.reshape(shape)
+    else:
+        image = flat.reshape((shape[0], shape[1], flat.shape[1]))
+        
+    return image
+
+
+
+def im2flat(image, **kwargs):
+    ''' Converting an image into a flat vector (can be RGB or multidimensional)
+    
+    Example:
+    --------
+    flat = imfun.im2flat(image)
+    
+    Parameters
+    ----------
+    image : numpy.ndarray (W, H, C)
+        The image to be flatten. It could be a grayscale image, with (H, W)
+        shape, an RGB image with (H, W, C) shape, or even a multidimensional
+        image with multiple channels. Here, 'H' stands for higher, 'W' for
+        width and 'C' for channels.
+    
+    **kwargs : 
+        Additional arguments to control various options:
+        
+        - mask : numpy.ndarray
+            When this mask is passed, only the pixels of `image` in the posi-
+            tions where `mask` is non-zero will be considered to build the
+            flat vector.
 
     Returns
     -------
-    flat : np.array
-        A flatten array with (high*width)x1 for a 2D input, and a (high*width)xN for a N-dimensional input.
-    '''
+    flat : numpy.ndarray
+        A flatten array with a shape (H*W, C).'''
+    
+    # Getting the keyword arguments (**kwargs), if any
+    mask = kwargs.get('mask')
+    # Transforming image into 'numpy.ndarray'
     image = np.asarray(image)
     
-    if len(np.shape(image)) == 2:
-        # first we define the first part of flat (the first line of 'image')
-        flat = np.array(image[0,:])
-        # since we already saved the first line of 'image', we iterate 
-        # until all the images minus one, as follows.
-        for l in range(len(image[:,0])-1):
-            flat = np.concatenate((flat,image[l+1,:]))
-    elif len(np.shape(image)) > 2:
-        flat = []
-        for d in range(len(image[0,0,:])):
-            flat_temp = np.array(image[0,:,d])
-            for l in range(len(image[:,0,d])-1):
-                flat_temp = np.hstack((flat_temp, image[l+1,:,d]))
-            flat.append(flat_temp)
-        flat = np.asarray(flat)
-    else: print('The input \'image\' has to be at least 2D')
-        
-    return flat
+    # If mask is multidimensional, transforming it into a grayscale image
+    if mask is not None:
+        mask = np.asarray(mask)
+        if len(mask.shape) > 2:
+            mask = mask[:, :, 0]
+    
+    shape = image.shape
+    if len(shape) == 2:
+        if mask is not None:
+            return image[mask!=0]
+        else:
+            return image.reshape((shape[0]*shape[1], 1))
+    elif len(shape) == 3:
+        if mask is not None:
+            return image[mask!=0]
+        else:
+            return image.reshape((shape[0]*shape[1], shape[2]))
+    else:
+        raise ValueError(f'The input image has to be three dimensions, but {len(shape)} was passed.')
 
 
 
@@ -529,9 +563,14 @@ class im2label_class(object):
             self.done = True
     
     # This function is to really 'run' the 'choose_points1' class:
-    def run(self, image, label, cmap, w, h, dim, img_type, color):
+    def run(self, image, label, cmap, w, h, color, **kwargs):
+        # Reading kwargs if any
+        label_name = kwargs.get('label_name')
         # Stating a window_name for opencv
-        window_name = 'Choose a region for label ' + str(label)
+        if label_name:
+            window_name = 'Choose a region for the ' + label_name + ' label'
+        else:
+            window_name = 'Choose a region for label ' + str(label)
         
         # Separating if we use or not a colormap.
         if cmap is not None:
@@ -562,7 +601,7 @@ class im2label_class(object):
             image2 = image_c.copy()
             # Creating the zoom in figure, we used 2*int because int(w/3) can
             # be different from 2*int(w/6).
-            zoom_in = np.zeros([2*int(h/6), 2*int(w/6), dim], np.uint8)
+            zoom_in = np.zeros([2*int(h/6), 2*int(w/6), 3], np.uint8)
             
             # If at least 1 point was chosen, draw the polygon and the working
             # line. We use cv2.imshow to constantly show a new image with the
@@ -648,101 +687,153 @@ class im2label_class(object):
 
 
 def im2label(root, classes, **kwargs):
-    '''Function to create a label mask from an image.
+    '''Function to create label images (or masks) from images in a folder.
     
-    This function creates another folder, with the same name of root plus
-    the string "labels", and start to save the label images in this folder,
-    with the same name. Since labeling takes lot of time, this function also 
-    identify which images are not labeled before to start. Final output image
-    is scaled from 0 to 255.
+    This function creates another folder, with the same name as `root` plus the
+    string "labels", and saves the label images in this folder with the same
+    name of original images. Since labeling takes a lot of time, this function
+    can also identifies which images were alredy labeled before starting. The
+    final output image is scaled between 0 to 255, which can be changed by
+    setting `scale=False`. (TODO:enhance document., say about classes+1 or background)
     
-    im2label(root, classes)
+    Example:
+    --------
+    images = im2label(root, classes, show = True)
     
-    root: 'string'
-        root directory where images are.
+    Parameters
+    ----------
+    root : str
+        Root directory where the images are located.
     
-    classes: 'int'
-        the number of classes to choose.
+    classes : int
+        The number of classes to choose.
     
-    **open_roi: 'string' (standard: None)
-        If open_roi is not 'None', the algorithm choose open regions (regions
-        that ends in the image bondary). If 'open_roi' = 'above', the chosen
-        region will be an open region above the chosen area, the opposite
-        happens if 'open_roi' = 'below', with a region below the chosen points.
-    **cmap: 'int' (cv2 colormap)
-    **show: 'boolean' (standard: False)
-        If 'show' is True, show the final image and its label until user press
-        'ESC', or any key.
-    **equalize: 'boolean' (standard: False)
-        If 'True', equalize grayscale image histogram.
-    **color: 'toople' (standard: (200,200,200))
-        Enter a different color to color the working line (R,G,B) with values
-        from 0 to 255.
+    **kwargs : 
+        Additional arguments to control various options:
+        
+        - save_images : bool (default: True)
+            Choose if the label images will be saved in a folder. By default,
+            the images are saved in a folder with the same name as `root` but
+            adding 'labels' at the end of its name.
+        
+        - open_roi : str (default: None)
+            If open_roi is not `None`, the algorithm chooses open regions (re-
+            gions that end at the image boundary). If `open_roi` = 'above', the
+            chosen region will be an open region above the selected area, the
+            opposite happens if `open_roi` = 'below', with a region below the
+            chosen points.
+        
+        - scale : bool (default: True)
+            If True, the label images will be scaled between 0 and 256. The sa-
+            ved labels/classes will be, e.g., 0, 127, and 255 in the case of 3
+            classes. If scale=False, the images will be labeled with integer
+            numbers, like 0, 1, and 2 in the case of 3 classes. In this case,
+            the saved images might appear almost black in the folder.
+        
+        - label_names : list (default: None)
+            A list of strings with the names of the labels to be shown during
+            the interaction with the user.
+        
+        - cmap : int (cv2 colormap, default: None)
+            Optional colormap to apply to the image.
+        
+        - show : bool (default: False)
+            If True, shows the final image and its label until the user presses
+            'ESC' or any key.
+        
+        - equalize : bool (default: False)
+            If True, equalizes the grayscale image histogram.
+        
+        - color : tuple (default: (200, 200, 200))
+            Enter a different color to color the working line (R, G, B) with
+            values from 0 to 255.
+    
+    Return
+    ------
+    images : list
+        A list with the labeled images, all of `numpy.ndarray` type.
     
     Mouse actions:
-    - left buttom: select a new point in the label;
-    - right buttom: end selection and finish or go to another label;
+    - Left button: select a new point in the label;
+    - Right button: end selection and finish or go to another label;
     - ESC: finish selection (close the algorithm).
     
-    **OBS1: When using 'open_roi', it is just possible to chose points from
-    left part of the image to the right.
-    OBS: The remaining unlabeled pixels will be set as the background pixels
-    (they will belong to the last label)(if a label is chosen more than once,
-    the last chosen label will be applied).
-    OBS2: images can be multidimensional ([hiegth,width,dimensions])
-    '''   
-    # Transforming classes to integer
-    classes = int(classes)
+    Notes:
+    ------
+    - When using `open_roi`, it is only possible to choose points from the left
+      part of the image to the right.
+    - The remaining unlabeled pixels will be set as background pixels (they
+      will belong to the last label). If a label is chosen more than once, the
+      last chosen label will be applied.
+    - Images can be multidimensional (`[height, width, dimensions]`).
+    '''
+    # Adding 1 will allow the user to be able to choose the number of classes
+    # he entered, and to consider an aditiona class for the background (zero)
+    classes = int(classes+1)
     # With 'kwargs' we can define extra arguments as input.
+    save_images = kwargs.get('save_images', True)
     cmap = kwargs.get('cmap')
     open_roi = kwargs.get('open_roi')
     show = kwargs.get('show')
     equalize = kwargs.get('equalize')
     color = kwargs.get('color')
+    scale = kwargs.get('scale')
+    label_names = kwargs.get('label_names')
     
     # If no color was chosen, choose gray:
     color = (200, 200, 200) if color==None else color
 
-    # First, we create a folder with name 'root'+ ' labels', to save results
-    os.chdir(root)
-    os.chdir('..')
-    basename = os.path.basename(os.path.normpath(root))
-    # If folder has been already created, the use of try prevent error output
-    try: os.mkdir(basename+' labels')
-    except: pass
-    os.chdir(basename+' labels')
-    # Verify if folder has some already labaled images, if yes, skip the 
-    # labeled ones
-    image_names = os.listdir(root)
-    if os.listdir(os.curdir):
-        for name in os.listdir(os.curdir):
-            if name in image_names:
-                image_names.remove(name)
-    # Shuffling the names
+    # First, we create a folder with name ´root´+ ' labels', to save results,
+    # but only if the user choose to save the images (if save_images==True):
+    if save_images:
+        os.chdir(root)
+        os.chdir('..')
+        basename = os.path.basename(os.path.normpath(root))
+        # If folder has been already created, the use of try prevent error output
+        try: os.mkdir(basename+' labels')
+        except: pass
+        os.chdir(basename+' labels')
+        # Verify if folder has some already labaled images, if yes, skip the 
+        # labeled ones
+        image_names = list_images(root)
+        if os.listdir(os.curdir):
+            for name in os.listdir(os.curdir):
+                if name in image_names:
+                    image_names.remove(name)
+    else:
+        image_names = list_images(root)
+    
+    # Shuffling the names. Very important when all images in the dataset are
+    # almost equal, like for OCT.
     shuffle(image_names)
+    
+    # Next few lines create colors to be shown to the user as labels. The while
+    # loop is used to ensure that none of the labels are null or equal to any
+    # other label. Each line of the 'colors' vector is the values of the RGB
+    # channels (that will be multiplied by 127 to be in the range 0-255)
+    equal_lines = True
+    null_lines = True
+    count = 0
+    while equal_lines==True or null_lines==True:
+        colors = np.random.randint(0, 3, size=(classes, 3))
+        # Checking if there are equal lines
+        equal_lines = np.any(np.triu(np.all(colors[:, None, :]==colors, axis=2), 1))
+        # Checking if one of the lines is null
+        null_lines = np.any(np.all(colors == 0, axis=1))
+        if count > 50:
+            break
+        count += 1
+    
+    # Variable with labeled images to return from the function
+    images = []
     # This for will iterate in each image in 'root' folder
     for image_name in image_names:
-        image = cv2.imread(os.path.join(root, image_name))
-        # Discovering the image type [color or multidimensional (img_type1 = 3)
-        # or gray (img_type1 = 2)]
-        img_type1 = len(np.shape(image))
-        if img_type1 == 2:
-            img_type = 'gray'
-            # Equalizing histogram
-            if equalize == True:
-                cv2.equalizeHist(image, image)
-            image = image[..., np.newaxis]
-            image[:,:,1] = image[:,:,0]
-            image[:,:,2] = image[:,:,0]
-            dim = 1
-        else:
-            img_type = 'color'
-            dim = np.shape(image)[2]
-        # first the image label will be a '-1' array
-        if img_type == 'gray':
-            label_image = np.zeros(np.shape(image), int)-np.ones(np.shape(image), int)
-        else:
-            label_image = np.zeros(np.shape(image[:,:,0]), int)-np.ones(np.shape(image[:,:,0]), int)
+        image = cv2.imread(os.path.join(root, image_name), cv2.IMREAD_COLOR)
+        # Equalizing histogram
+        if equalize == True:
+            cv2.equalizeHist(image, image)
+        # First the label image will be a '-1' array
+        label_image = np.full(image.shape, -1)
         # Image width and higher
         w = np.shape(image)[1]
         h = np.shape(image)[0]
@@ -751,30 +842,29 @@ def im2label(root, classes, **kwargs):
         while label < classes:
             # The '.run' class gives the chosen points
             im2label = im2label_class()
-            points = im2label.run(image, label, cmap, w, h, dim, img_type, color)
+            # If user choose names for labels, send the names to 'run' function
+            if label_names:
+                points = im2label.run(image, label, cmap, w, h, color,
+                                      label_name=label_names[label-1])
+            else:
+                points = im2label.run(image, label, cmap, w, h, color)
             points = np.asarray(points)
             # If no points were chosen, gives the option to label the unchosen
             # points in the image as background
             if len(points)<1:
                 q1 = 'Label unchosen points as background?'
-                q2 = '\n\n\'No\' will quit application (an error will eventually raised).'
+                q2 = '\n\n\'No\' will quit application (an error will eventually raise).'
                 # Answer: asw = 6 (yes), asw = 7 (no) 
                 asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
                 if asw == 6:
                     break
-            # Creating a roi to signaling the chosen region with '1'
-            if img_type == 'gray':
-                roi = np.zeros(np.shape(image), 'int')
-            else:
-                roi = np.zeros(np.shape(image[:,:,0]), 'int')
+            # Creating a ROI to signaling the chosen region with '1'
+            roi = np.zeros_like(image)
             # First we run when roi regions are closed (open_roi == None)
             if not open_roi:
                 cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
-                # Then we change the 'label_image' to 'label' when roi was chosen
-                label_image[roi==1] = label
-                # If is interesting to only change where there are no other
-                # labels assigned, use another condition as follows:
-                # label_image[(roi==1) & (label_image==-1)] = label
+            
+            # If 'above' or 'below' are choosen, then run the following
             elif open_roi == 'above' or open_roi == 'below':
                 # If ROI is 'above', concatenate the upper image part, but
                 # if the user choose points near to the sides, concatenate
@@ -850,42 +940,65 @@ def im2label(root, classes, **kwargs):
                 if start_points is not None:
                     points = np.concatenate((start_points,points), axis=0)
                 cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
-                # Assigning 'label' where 'roi' was chosen
-                label_image[roi==1] = label
-                # If is interesting to only change where there are no other
-                # labels assigned, use another condition as follows:
-                # label_image[(roi==1) & (label_image==-1)] = label
             else:
                 raise ValueError('\nvariable \'open_roi\' has to be \'above\' or \'below\'')
             # Ask if the label was currectly chosen:
-            q1 = 'Was label '+str(label)+' correctly chosen?'
+            if label_names:
+                q1 = 'Was ' + label_names[label-1] + ' label correctly chosen?'
+            else:
+                q1 = 'Was label ' + str(label) + ' correctly chosen?'
             q2 = '\n\nSelect \'No\' to redo the labeling \n\n\'Yes\': to go forward..'
             # Answer: asw = 6 (yes), asw = 7 (no) 
             asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
             if asw == 6:
-                # Ask if the user wants to choose more parts to the same label
-                q1 = 'Want to choose more points for label '+str(label)+'?'
-                q2 = '\n\nSelect \'No\' to continue.. \n\n\'Yes\': to select more labels.'
-                # Answer: asw = 6 (yes), asw = 7 (no) 
-                asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
-                if asw == 7:
-                    label += 1
+                # Writing 'label' chosen in 'label_image' variable
+                label_image[roi==1] = label
+                # If is interesting to only change where there are no other
+                # labels assigned, use another condition as follows:
+                # label_image[(roi==1) & (label_image==-1)] = label
+                
+                # Drawing the ROI in the original image
+                mask = np.zeros_like(roi)
+                mask[..., 0] = int(colors[label, 0]*255/2)
+                mask[..., 1] = int(colors[label, 1]*255/2)
+                mask[..., 2] = int(colors[label, 2]*255/2)
+                roi2draw = roi*mask
+                image = cv2.addWeighted(image, 1, roi2draw.astype('uint8'), 0.4, 0)
+                
+            # Ask if the user wants to choose more parts to the same label
+            if label_names:
+                q1 = 'Want to choose more points for the ' + label_names[label-1] + ' label?'
+            else:
+                q1 = 'Want to choose more points for label ' + str(label) + '?'
+            q2 = '\n\nSelect \'No\' to continue.. \n\n\'Yes\': to select more labels.'
+            # Answer: asw = 6 (yes), asw = 7 (no) 
+            asw = ctypes.windll.user32.MessageBoxW(0, q1+q2,"Pergunta", 4)
+            if asw == 7:
+                label += 1
         
         # Assigning the last label as background (label = 0).
         label_image[label_image==-1] = 0
-        label_image = np.array(label_image, np.uint8)
-        label_image = scale255(label_image)
+        label_image = np.array(label_image[..., 0], np.uint8)
+        if scale:
+            label_image = scale255(label_image)
         # If 'show' = True
         if show:
             fig, ax = plt.subplots(1,2)
-            if img_type == 'color':
-                ax[0].imshow(image[:,:,::-1])
+            # To change from BGR (used by OpenCV) to RGB we used "::-1"
+            ax[0].imshow(image[:,:,::-1])
             ax[0].axis('off')
+            ax[0].set_title('Reference Image')
             ax[1].imshow(label_image, vmax=np.max(label_image), vmin=np.min(label_image), cmap = 'viridis')
             ax[1].axis('off')
-        # Adding final label image in 'label_images'
-        cv2.imwrite(image_name, label_image)
+            ax[1].set_title('Labeled Image')
+            fig.tight_layout()
+        # Adding final label image in 'label_images', if 'save_images=True'
+        if save_images:
+            cv2.imwrite(image_name, label_image)
+        images.append(label_image)
     print('\nAll the images were labeled')
+    
+    return images
 
 
 
