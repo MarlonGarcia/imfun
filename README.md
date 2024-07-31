@@ -61,9 +61,16 @@ Library for image pre-processing, with functions to handle and prepare images fo
 - `isoareas`: complex function to measure pixels' intensity in adjacent areas. This is a very specific function to process fluorescence intensities of cells in confocal microscopy images
 - `good_colormaps`: visualizing the best Matplotlib colormaps in an image
 - `improfile`: finds the pixels' intensity profile between two points (GUI) (maybe not working)
-    
 
-## How to Install
+
+
+### 5. Tutorials and Examples
+
+Inside the `tutorials` folder there are some examples of using the functions of this library. In this folder, the files with name `imex_name.py` present an example of using the function indicated by the `name` part.
+
+
+
+### 6. How to Install
 
 You can install using `pip`:
 
@@ -78,7 +85,7 @@ pip install image-functions==0.1.6
 - institution: Sao Paulo State University (Unesp)
 
 
-### Scientific Research
+### 7. Scientific Research
 
 This work is the product of the research being conducted at two universities in Brazil:
 
