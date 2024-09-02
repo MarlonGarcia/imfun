@@ -1,11 +1,11 @@
-''' Easely calculate statistics of images in a given region of the images
+''' Easily calculate statistics of images in a given region of the images
 
-This function uses a interactive graphical user interface (GUI) to calcula-
+This function uses an interactive graphical user interface (GUI) to calcula-
 te the statistics of multiple images, in a given region of interest (ROI)
-inside the image. To use this function, your images have to be in a folder
-tree like bellow. The outer folder will be 'Images Folder', that has to be
-passed to this function in the 'images_dir' variable. Inside this folder
-you can add as many parts of your experiment you want to (in this case
+inside the image. To use this function, your images must be in a folder
+tree like below. The outer folder will be 'Images Folder', which has to be
+passed to this function in the 'images_dir' variable. Inside this folder,
+you can add as many parts of your experiment as you want to (in this case
 exemplified as animals). Inside each part (or animal) of your experiments,
 it have to be folders corresponding to the exact experiments conducted (for
 example different times, or differents treatments types or measurements).
@@ -65,19 +65,19 @@ import imfun
 images_dir = r'C:\Users\marlo\Downloads\Widefield\Creme'
 
 # Enter the directory to save the final data
-save_dir = r'C:\Users\marlo\My Drive\College\Biophotonics Lab\Research\Programs\Python\Camera & Image\Campo Amplo\2023.08.24 - PDT Sara\results'
+save_dir = r'C:\Users\marlo\Downloads\Widefield\Results'
 
 # Delineate here all the experiment names you want to
 experiments = ['0h', '30min', '1h', '2h', 'pPDT']
 
 # Delineate the colors you want to measure
-colors = ['red', 'green', 'blue']
+colors = [1, 2, 3]
+         
+# To analyze grayscale images, choose any number from 1 to 3 as follows
+# colors = [1]
 
-# Use the following if you want to analyse grayscale images
-# colors = ['gray']
-
-# Define the statistics you want to apply
-stats = ['mean', 'std']
+# Define the statistics you want to apply. In this case we applied all of them
+statistics = ['mean', 'std', 'median', 'mode', 'entropy']
 
 # Defining the colormap to be used to show the images
 colormap = cv2.COLORMAP_PARULA
@@ -85,8 +85,8 @@ colormap = cv2.COLORMAP_PARULA
 # Other colormaps: "cv2.COLORMAP_PINK", "cv2.COLORMAP_HSV", "cv2.COLORMAP_BONE"
 
 # Run the code below to choose the folder by yourself (with a pop-up)
-# imfun.roi_stats(experiments, colors, colormap=colormap)
+# imfun.roi_stats(experiments, colors, stats=stats, colormap=colormap)
 
 # Run the code below when you want to difine the directories in the variables
 # 'images_dir' and 'save_dir'. Using 'show=True', all images will be printed.
-imfun.roi_stats(experiments, colors, save_dir=save_dir, images_dir=images_dir, show=True, colormap=colormap)
+imfun.roi_stats(experiments, colors, statistics=statistics, save_dir=save_dir, images_dir=images_dir, show=True, colormap=colormap)

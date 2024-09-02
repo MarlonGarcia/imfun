@@ -4,14 +4,14 @@ Image Functions Library
 
 Library for image pre-processing, with functions to handle and prepare images
 for machine learning and image processing. This library accounts for functions
-to: load and plot a group of images, pre-processing, choose ROI regions (may be
+to: load and plot a group of images, pre-processing, choose ROI regions (maybe
 polygonal), choose points, get image properties, align and transform images
-(including rotate, scale, etc.), filter signals and images (2D data), among
+(including rotation, scale, etc.), filter signals and images (2D data), among
 others.
 
 
 OBS: some functions use the 'pynput' and 'windsound' libraries, which may be
-difficult to install and do not works on non-windows platforms. Comment these
+difficult to install and not work on non-windows platforms. Comment on these
 library imports if there are problems during installation or loading.
 
 @author: Marlon Rodrigues Garcia
@@ -2213,24 +2213,25 @@ def imroiprop(I):
 
 
 def roi_stats(experiments, colors, **kwargs):
-    ''' Easely calculate statistics of images in a given region of the images
+    ''' Easely calculate statistics of multiple images in a folder, for a given
+    area of interest (or region of interest, ROI)
     
     This function uses a interactive graphical user interface (GUI) to calcula-
     te the statistics of multiple images, in a given region of interest (ROI)
-    inside the image. To use this function, your images have to be in a folder
-    tree like bellow. The outer folder will be 'Images Folder', that has to be
-    passed to this function in the 'images_dir' variable. Inside this folder
-    you can add as many parts of your experiment you want to (in this case
-    exemplified as animals). Inside each part (or animal) of your experiments,
-    it have to be folders corresponding to the exact experiments conducted (for
-    example different times, or differents treatments types or measurements).
-    After the processing, a '.csv' data file is saved in the folder/directory
-    specified in the variable 'save_dir'.
+    chosen by the user inside the images. To use this function, the images have
+    to be in a folder tree like bellow, with a "root folder" containing multi-
+    ple "samples", and in each "sample" can be added multiple "experiments".
+    You can have only one experiment or one sample, but this algorithm requires
+    these three levels of folders (experiemnts inside samples inside the root).
     
-    Images Folder
+    The "samples" can be animals or humans, in clinical experiments, or any
+    other sample we can image. The experiments can be different times, or any
+    other experiment performed.
+    
+    Root Folder
         |
         |
-        |--- Animal 1
+        |--- Sample 1
         |       |
         |       |--- Experiment 1
         |       |
@@ -2239,7 +2240,7 @@ def roi_stats(experiments, colors, **kwargs):
         |       '--- Experiment 3
         |
         |
-        '--- Animal 2
+        '--- Sample 2
                 |
                 |--- Experiment 1
                 |
@@ -2247,33 +2248,94 @@ def roi_stats(experiments, colors, **kwargs):
                 |
                 '--- Experiment 3
     
-    Parameters
-    ----------
+    Usage Example
+    -------------
+    Following is a simple example, you can find a more sophisticated one in the
+    "tutorials" folder on GitHub: https://github.com/MarlonGarcia/imfun
+    
+        # Choose the experiments to be passed (the names have to be identical
+        # the names of the folders in the level of "experiments", as in the
+        # folder tree above):
+        experiments = ['0h', '1h', '2h']
+        
+        # Then we define the "colors" or "channels" to be processed. To process
+        # all the colors (red, green and blue) in the images, we can choose
+        # as following:
+        colors = [1, 2, 3]
+        
+        # Running the function
+        imfun.roi_stats(experiments, colors)
+    
+    Detailed explanation
+    --------------------
+    To run this function, we need to pass at least the variables `experiments`
+    and `colors`, as in the above example, and as described described in the
+    "Input Parameters" section (below). A window will appear to help the user
+    choose wher the "root direcotry" is, and where tho save the processing
+    results (a CSV file containing all the data calculated).
+    
+    When the function runs, each image will be shown to the user in order to
+    choose the area to calculate the statistics (the region of interest) using
+    the mouse. "Left clicks" will choose the points to contour the area of
+    interest, and a "right click" will finish the choise. A box dialog will ask
+    if the user choose the region correctly (if not, we can chose it again).
+    After all images are chosen, the algorithm will return a CSV file with all
+    the statistics to the folder chosen to save the results.
+    
+    To run this function faster, you can pass the "root folder" in the optional
+    variable `images_dir`, and the directory to save the results in `save_dir`
+    variable.
+    
+    Input Parameters
+    ----------------
     experiments : list
         Names of the experiments. Note that it has to mach the experiment names
         e.g. ['Experiment 1', 'Experiment 2', 'Experiment 3'] in the example.
-    colors : list
-        Name of the colors (or channels) to be analized in the image, or a list
-        with the string 'gray' for grayscale images. E.g.: ['gray'] or ['red'],
-        or even all the colors ['red', 'green', 'blue']
     
-    **kwargs (arguments that may or may not be passed to the function)
-    ----------
+    colors : list of integers
+        Colors (or channels) to be analized in the image. Here, the numbers
+        1, 2 and 3 are used to chooose `red`, `green` and `blue`, respectively,
+        which are the first, second and third channels of a RGB color image.
+        Examples:
+            # To process the red and the blue channels, define the following:
+            colors = [1, 3]
+            
+            # To process all the three colors/channels in the image, choose:
+            colors = [1, 2, 3]
+            
+            # For grayscale images, we can choose any number from 1 to 3:
+            colors = [1]
+    
+    Optional Parameters (kwargs)
+    ----------------------------
     images_dir : string
-        Root directory (outer folder) of your images. E.g. 'C:/Users/User/data'
+        The root directory where the images are. E.g. 'C:/Users/User/data'
+        
     save_dir : string
-        Directory to save the images.
-    stats : list
-        A list with the statistics to be calculated. Only mean and standard
-        deviation are suported until now. E.g. ['mean'] or ['mean', 'std']
+        The directory where the images will be saved.
+        
+    statistics : list
+        The list of statistics to be calculated. Default is ['mean', 'std'].
+        Are also available: mean, standard deviation, median, mode and entropy
+    
     show : boolean
         If 'True', print all the images processed. The default is 'False'.
+    
     colormap : int
         The colormap to use while choosing the region of interest
         examples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV, cv2.COLORMAP_PARULA.
+    
+    Applications
+    ------------
+        1) Process images from mouse, animals or human experiments. Experiments
+        like: microscopy, widefield images, fluorescence, confocol microscopy,
+        among others
+        
+        2) Medical imaging, material science, or any application that needs to
+        calculate pixels' statistics.
     '''
     colormap = kwargs.get('colormap', cv2.COLORMAP_PINK)
-    stats = kwargs.get('stats', ['mean', 'std'])
+    statistics = kwargs.get('statistics', ['mean', 'std'])
     images_dir = kwargs.get('images_dir', None)
     save_dir = kwargs.get('save_dir', None)
     show = kwargs.get('show', False)
@@ -2310,9 +2372,9 @@ def roi_stats(experiments, colors, **kwargs):
     
     # Adding all the names of experiments to be saved on 'dados'
     for exp in experiments:
-        for color in colors:
-            for stat in stats:
-                dados[exp+' - '+stat+' '+color] = []
+        for n in colors:
+            for stat in statistics:
+                dados[f'{exp} - CH{n} - {stat}'] = []
     
     # Defining the question to be asked to the user
     question = 'OK: to continue\n\nCancel: for redo'
@@ -2333,16 +2395,14 @@ def roi_stats(experiments, colors, **kwargs):
                 name = list_images(path)[0]
                 path = os.path.join(path, name)
                 # Reading image
-                if 'gray' in colors:
-                    Itemp = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-                else:
-                    Itemp = cv2.imread(path, cv2.IMREAD_COLOR)
-                    # Trying to change the image colors, if it is not, the image
-                    # was probably not recognized correctly, so raise an error
-                    try:
-                        Itemp = cv2.cvtColor(Itemp, cv2.COLOR_BGR2RGB)
-                    except:
-                        raise ValueError(f'\n\n- Error when opening image from {folder}, for the experiment: {exp}')
+                Itemp = cv2.imread(path, cv2.IMREAD_COLOR)
+                # Trying to change the image colors, if it is not, the image
+                # was probably not recognized correctly, so raise an error
+                try:
+                    Itemp = cv2.cvtColor(Itemp, cv2.COLOR_BGR2RGB)
+                except:
+                    raise ValueError(f'\n\n- Error when opening image from {folder}, for the experiment: {exp}')
+                # Selecting region of interest
                 asw = 2
                 while asw != 1:
                     # With the next command the user can circulate the lesion
@@ -2362,58 +2422,38 @@ def roi_stats(experiments, colors, **kwargs):
                     plt.show()
                 
                 # Calculating the measures defined in 'stast'
-                if 'gray' in colors:
-                    if 'mean' in stats:
-                        dados[f'{exp} - mean gray'].append(np.mean(Itemp[Imask>0]))
-                    if 'std' in stats:
-                        dados[f'{exp} - std gray'].append(np.std(Itemp[Imask>0]))
-                else:
-                    if 'red' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean red'].append(np.mean(Itemp[:,:,0][Imask[:,:,0]>0]))
-                        if 'std' in stats:
-                            dados[f'{exp} - std red'].append(np.std(Itemp[:,:,0][Imask[:,:,0]>0]))
-                    if 'green' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean green'].append(np.mean(Itemp[:,:,1][Imask[:,:,1]>0]))
-                        if 'std' in stats:
-                            dados[f'{exp} - std green'].append(np.std(Itemp[:,:,1][Imask[:,:,1]>0]))
-                    if 'blue' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean blue'].append(np.mean(Itemp[:,:,2][Imask[:,:,2]>0]))
-                        if 'std' in stats:
-                            dados[f'{exp} - std blue'].append(np.std(Itemp[:,:,2][Imask[:,:,2]>0]))
+                for n in colors:
+                    if 'mean' in statistics:
+                        dados[f'{exp} - CH{n} - mean'].append(np.mean(Itemp[:,:,n-1][Imask[:,:,n-1]>0]))
+                    if 'std' in statistics:
+                        dados[f'{exp} - CH{n} - std'].append(np.std(Itemp[:,:,n-1][Imask[:,:,n-1]>0]))
+                    if 'mode' in statistics:
+                        dados[f'{exp} - CH{n} - mode'].append(stats.mode(Itemp[:,:,n-1][Imask[:,:,n-1]>0], axis = None)[0])
+                    if 'median' in statistics:
+                        dados[f'{exp} - CH{n} - median'].append(np.median(Itemp[:,:,n-1][Imask[:,:,n-1]>0]))
+                    if 'entropy' in statistics:
+                        dados[f'{exp} - CH{n} - entropy'].append(shannon_entropy(Itemp[:,:,n-1][Imask[:,:,n-1]>0]))
             
             # If does not find the data, add zero to the data to be saved
             else:
-                if 'gray' in colors:
-                    if 'mean' in stats:
-                        dados[f'{exp} - mean gray'].append(int(0))
-                    if 'std' in stats:
-                        dados[f'{exp} - std gray'].append(int(0))
-                else:
-                    if 'red' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean red'].append(int(0))
-                        if 'std' in stats:
-                            dados[f'{exp} - std red'].append(int(0))
-                    if 'green' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean green'].append(int(0))
-                        if 'std' in stats:
-                            dados[f'{exp} - std green'].append(int(0))
-                    if 'blue' in colors:
-                        if 'mean' in stats:
-                            dados[f'{exp} - mean blue'].append(int(0))
-                        if 'std' in stats:
-                            dados[f'{exp} - std blue'].append(int(0))
+                for n in colors:
+                    if 'mean' in statistics:
+                        dados[f'{exp} - CH{n} - mean'].append(int(0))
+                    if 'std' in statistics:
+                        dados[f'{exp} - CH{n} - std'].append(int(0))
+                    if 'mode' in statistics:
+                        dados[f'{exp} - CH{n} - mode'].append(int(0))
+                    if 'median' in statistics:
+                        dados[f'{exp} - CH{n} - median'].append(int(0))
+                    if 'entropy' in statistics:
+                        dados[f'{exp} - CH{n} - entropy'].append(int(0))
     
     ## Saving the data
     columns = ['Experiment']
     for exp in experiments:
-        for color in colors:
-            for stat in stats:
-                columns.append(f'{exp} - {stat} {color}')
+        for n in colors:
+            for stat in statistics:
+                columns.append(f'{exp} - CH{n} - {stat}')
     
     # Go to the directory where the data will be saved
     os.chdir(save_dir)
@@ -2710,57 +2750,71 @@ def imwarp(images, warp_matrix):
 
 
 def roi_stats_in_detph(folder, numb, **kwargs):
-    '''This function loads all the images inside a folder, define a region of
-    interest inside each image (using two lines), devide this region in various
+    '''Calculate pixels' statistics in detph (for any given direction)
+    
+    This function loads all the images inside a folder, define a region of
+    interest inside each image (using 2 curves), devide this region in various
     equally spaced areas (isoareas), and calculates statistics for the pixels'
-    intensity in each of these area, following a particular direction (going
-    from one of the lines defined to the other one).
+    intensity in each of these areas, following a particular direction (going
+    from the front curve defined to the back curve).
     
     Applications:
-        Calculate fluorescence inside a tumor, as a function of depth, in his-
-        tological slides.
-        Microscopy, medical imaging, or material science, application that cal-
-        culates pixels' statistics for different position in a given direction.
+    -------------
+        1) Calculate fluorescence inside a tumor, as a function of depth, on
+        confocal microscopy or histological slides.
+        
+        2) Microscopy, medical imaging, material science, or any application
+        that need to calculate pixels' statistics as a function of depth in any
+        given direction.
     
     Usage example:
-        # Choose the folder where the images are
+    --------------
+        # Choose the folder where the images are:
         folder = r'C:/Users/user/data'
         
-        # Choose the number of isoareas to calculate
+        # Choose the number of isoareas to calculate, for example 10:
         numb = 10
         
-        # Call the function, defining the channels to enter in the statistics
-        dictionary = roi_stats_in_detph(folder, numb, channels=[1, 2, 3])
+        # Call the function, defining the channels to enter in the statistics:
+        dictionary = imfun.roi_stats_in_detph(folder, numb, channels=[1, 2, 3])
     
     Detailed explanation:
-        
-    1. Loading: This function will enter the folder difined in the variable
-    'folder', as in the above example, and process all the images inside it.
+    ---------------------
+    1. Loading: This function will enter the folder difined by the user in the
+    variable `folder`, as in the example above, and calculates the statistics
+    for each image inside it.
     
-    2. Choosing Lines: Then you will choose two lines (the front line and the
-    back one), using a graphical user interface (GUI). These lines will define
-    the region where the statistics will be calculated.
+    2. Choosing the Curves: When this function runs, a window will open with a
+    graphical user interface (GUI) that allow user to choose a "front curve"
+    and a "back curve" in the image. These two curves will define the area
+    where the statistics will be calculated (region of interest, ROI), which is
+    the area enclosed by these curves (area inside it). These curves ill also
+    determine the depth in which the statistics will be calculated, which will
+    be going from the "front curve" to the "back curve".
     
-    3. Isoareas: The closed region defined by the two lines drawn by the user
-    will be separated into various equally spaced lines (isolines). The area
-    defined between two adjascent 'isolines' will be called an 'isoarea'.
+    3. Isoareas: The closed region defined by the two curves drawn by the user
+    will be separated into various equally spaced areas called "isoarea", which
+    will follow a smooth transition between the curves.
     
     4. The Mask: An additional mask will be choosen by the user. Only the
     pixels inside this mask will be processed. Use this mask if you wants to
-    select just part of the region of interest defined by the two lines drawn
+    select just part of the region of interest defined by the two curves drawn
     (to process just part of the isoareas). Otherwise, choose the intire region
-    of interest to process all the selected pixels (all isoareas).
+    of interest to process all the selected pixels (all isoareas). This mask is
+    important to eliminate "edge effects" of the statistics from the regions
+    where the curves touch (if needed).
     
     5. Statistics in a Particular Direction: After that, a detailed statistics
-    will be calculated for each isoarea (mean, standard deviation, mode, median
-    and entropy), following a particular direction: going from the front line
-    to the back line. The number of isoareas is defined in 'numb'.
+    will be calculated for each isoarea (mean, standard deviation, mode,
+    median, entropy), following a particular direction: going from the front
+    curve to the back curve. The number of isoareas is defined by `numb`.
     
     
     Input Parameters
     ----------------
     folder : string
-        The directory where the images you want to process are.
+        The directory where the images you want to process are. The images can
+        be in different extensions, like LSM, PNG, JPG, etc.
     
     numb : integer
         The number of isoareas you want to calculate and process.
@@ -2768,9 +2822,12 @@ def roi_stats_in_detph(folder, numb, **kwargs):
     Optional Parameters (kwargs)
     ----------------------------
     channels : list
-        List here all the channels to be processed, e.g. 'channels = [1, 2, 3]'
-        to process all the three channels of an image. Default value is '[1]'.
-        In the case of grayscale images, you can use 'channels = [1]'.
+        List here all the channels to be processed, e.g. `channels = [1, 2, 3]`
+        to process all the three channels of the image. Default value is `[1]`.
+        If you want to process the first and the last channels of an image
+        (which could be the `red` and the `blue` channel of an RGB image), you
+        can call this function choosing `channels = [1, 3]`, for example. In
+        the case of grayscale images, you can choose `channels = [1]`.
     
     pixel_size : float or integer (default = 1.0)
         Enter the physical size discribed by a pixel. For example, if each
@@ -2823,7 +2880,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
             I1 = cv2.cvtColor(I, cv2.COLOR_RGB2GRAY)
         
         # Choosing the ROI of the first function.
-        window = 'Choose the front line'
+        window = 'Choose the front curve'
         [Itemp, points1] = polyroi(I1, cmap = cv2.COLORMAP_PINK,
                                    window_name = window)
         points1 = np.asarray(points1)  # 'polylines' function require in array.
@@ -2833,7 +2890,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         cv2.polylines(I2, [points1], False, (220,200,200), 3)
         
         # Choosing the ROI of the second function.
-        window = 'Choose the back line'
+        window = 'Choose the back curve'
         [Itemp, points2] = polyroi(I2, cmap = cv2.COLORMAP_PINK,
                                    window_name = window)
         # 'polylines' needs points as an array.
@@ -2844,7 +2901,8 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         if np.linalg.norm(points1[0, :]-points2[0, :]) > np.linalg.norm(points1[0, :]-points2[-1]):
             points2 = points2[::-1]
         
-        # The first and the last points of the first line will be used in 2nd line
+        # The first and the last points of the "front curve" will be used to
+        # define the first and the last points of the "back curve"
         points2[0,:] = points1[0,:]
         points2[-1,:] = points1[-1,:]
         
@@ -2895,7 +2953,7 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         
         # Joining all isolines in just one variable (better to handle), using the
         # lines chosen above (left and right lines). It has a size of '2*numb+2'
-        # because each line is defined by 2 columns, and we need one lines more to
+        # because each line is defined by 2 columns, and we need one line more to
         # define 'numb' isoareas (e.g. 2 isoareas needs 3 lines to be defined).
         isolines = np.zeros([len(points1a[:,0]), 2*numb+2], 'float')
         diff = (points2a - points1a)/numb

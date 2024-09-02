@@ -2,8 +2,8 @@
 
 This function creates another folder, with the same name as `root` plus the
 string "labels", and saves the label images in this folder with the same
-name of original images. Since labeling takes a lot of time, this function
-can also identifies which images were alredy labeled before starting. The
+name as the original images. Since labeling takes a lot of time, this function
+can also identify which images were already labeled before starting. The
 final output image is scaled between 0 to 255, which can be changed by
 setting `scale=False`. (TODO:enhance document., say about classes+1 or background)
 
@@ -14,7 +14,7 @@ images = im2label(root, classes, show = True)
 Parameters
 ----------
 root : str
-    Root directory where the images are located.
+    The root directory where the images are located.
 
 classes : int
     The number of classes to choose.
@@ -30,7 +30,7 @@ classes : int
     - open_roi : str (default: None)
         If open_roi is not `None`, the algorithm chooses open regions (re-
         gions that end at the image boundary). If `open_roi` = 'above', the
-        chosen region will be an open region above the selected area, the
+        the chosen region will be an open region above the selected area, the
         opposite happens if `open_roi` = 'below', with a region below the
         chosen points.
     
@@ -53,7 +53,7 @@ classes : int
         'ESC' or any key.
     
     - equalize : bool (default: False)
-        If True, equalizes the grayscale image histogram.
+        If True, it equalizes the grayscale image histogram.
     
     - color : tuple (default: (200, 200, 200))
         Enter a different color to color the working line (R, G, B) with
@@ -62,7 +62,7 @@ classes : int
 Return
 ------
 images : list
-    A list with the labeled images, all of `numpy.ndarray` type.
+    A list with the labeled images, all of the `numpy.ndarray` type.
 
 Mouse actions:
 - Left button: select a new point in the label;
@@ -82,4 +82,17 @@ Notes:
 import imfun2 as imfun
 
 
+# The next variable defines the root directory where the images are located
+root = r'C:\Users\marlo\Downloads\Deletar\2024.07.22 - Iago Figado de Rato Ultrassom'
 
+# Next we define the number of classes we will choose in the images. Notice
+# that a last background class will be automatically assigned to unselected
+# regions (zero values are assigned for background).
+classes = 3
+
+# Choosing names to labels, to appear in the images' title
+label_names = ['unhealthy', 'healthy', 'white']
+
+# Actually running the labeling function
+images = imfun.im2label(root, classes, show = True, scale = False,
+                        label_names = label_names)

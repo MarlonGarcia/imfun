@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "image-functions"
-version = "0.1.6"
+version = "0.1.7"
 description = "Image Processing Functions"
 readme = "README.md"
 authors = [{ name = "Marlon Rodrigues Garcia", email = "marlon.garcia@unesp.br" }]
@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
-keywords = ["image processing", "digital image", "image functions"]
+keywords = ["image processing", "digital image", "image functions", "machine learning data preparation", "artificial intelligence data preparation"]
 dependencies = [
     "numpy",
     "opencv-contrib-python",
