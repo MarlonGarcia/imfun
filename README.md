@@ -80,6 +80,14 @@ pip install image-functions==0.1.8
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
 
+
+If you have other versions of this library installed, please remove it first:
+```
+pip uninstall image-functions
+
+pip install image-functions==0.1.8
+```
+
 - author: Marlon Rodrigues Garcia
 - contact: marlon.garcia@unesp.br
 - institution: Sao Paulo State University (Unesp)
