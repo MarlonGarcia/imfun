@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "image-functions"
-version = "0.1.7"
+version = "0.1.8"
 description = "Image Processing Functions"
 readme = "README.md"
 authors = [{ name = "Marlon Rodrigues Garcia", email = "marlon.garcia@unesp.br" }]
@@ -26,6 +26,7 @@ dependencies = [
     "pynput",
     "pandas",
     "tifffile",
+    "openpyxl"
 ]
 
 requires-python = ">=3.7"

@@ -75,7 +75,7 @@ Inside the `tutorials` folder there are some examples of using the functions of 
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.7
+pip install image-functions==0.1.8
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.

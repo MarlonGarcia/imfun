@@ -6,3 +6,4 @@ pandas
 pynput
 pandas
 tifffile
+openpyxl

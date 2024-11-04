@@ -37,10 +37,12 @@ from scipy.fft import fft, fftfreq
 from scipy.interpolate import interp1d
 from scipy.interpolate import splprep, splev
 from scipy.ndimage import center_of_mass
+# from scipy.optimize import curve_fit
 from skimage.measure import shannon_entropy
 from pynput import keyboard   # It does not worked on Google Colab
 import winsound               # To perform 'beep' sounds, only works on Windows
-
+# import datetime
+import json
 
 
 def list_folders(directory):
@@ -2137,7 +2139,7 @@ def lowpass_fft(img, **kwargs):
 
 def filt_hist(hist):
     '''
-    Functino to 'filter' equalized histogram, removing the zeros values 
+    Function to 'filter' equalized histogram, removing the zeros values 
     between positive ones (usefull to process equalized historgrams).
     
     output = filt_hist(hist)
@@ -2837,6 +2839,12 @@ def roi_stats_in_detph(folder, numb, **kwargs):
     show : boolean
         Choose 'True' to visualize each image processed, with its isoareas.
     
+    raw_data : boolean
+        If `raw_data = True`, the raw data from all pixels will be returned,
+        instead of the statistics. Also the `JSON` file will be saved,
+        containing the raw data, which is the intensity of each pixel, for each
+        channel. Note that it can be a heavy file.
+    
     Returns (Outputs)
     -----------------
     dictionary : dictionary
@@ -2846,15 +2854,14 @@ def roi_stats_in_detph(folder, numb, **kwargs):
     # Obtaining the channels the user wants to process
     channels = kwargs.get('channels', [1])
     channels = np.asarray(channels)
-    
     # Obtaining the physical image size of each pixel
     pixel_size = kwargs.get('pixel_size', 1)
-    
-    # Verifying if it is a test to print some images and some data
+    # Verifying if it is a test to print some extra images and data
     test = kwargs.get('test')
-    
     # If 'show = True', print each processed image for user's visualizagion
     show = kwargs.get('show')
+    # If the user wants the raw data, this 'kwarg' will be 'True'
+    raw_data = kwargs.get('raw_data', False)
     
     # Reading image names
     image_names = list_images(folder)
@@ -3095,37 +3102,64 @@ def roi_stats_in_detph(folder, numb, **kwargs):
         # multiplied by the 'pixel_size'
         width = abs(np.sin(angle)*mag1*pixel_size)
         
-        # Creating a dictionary to save the data (based on the channels choosen)
-        dictionary = {'width': []}
-        for channel in channels:
-            dictionary[f'mean of CH{channel}'] = []
-            dictionary[f'std of CH{channel}'] = []
-            dictionary[f'mode of CH{channel}'] = []
-            dictionary[f'median of CH{channel}'] = []
-            dictionary[f'entropy of CH{channel}'] = []
-        
-        # Preparing data to be saved on 'name.csv'
-        for n in range(0, numb):
-            dictionary['width'].append(n*width + width/2)
+        # If `raw_data = False` the statistics will be outputed, if `raw_data =
+        # True`, then the raw data with the pixels' intensity will be outputed
+        if not raw_data:
+            # Creating a dictionary to save the data (based on the channels choosen)
+            dictionary = {'width': []}
             for channel in channels:
-                # Since Python starts with '0', we subtracts '1' from the channel
-                Itemp = I[:, :, channel-1]*I5[n]*Imask
-                dictionary[f'mean of CH{channel}'].append(Itemp[Itemp!=0].mean())
-                dictionary[f'std of CH{channel}'].append(Itemp[Itemp!=0].std())
-                dictionary[f'mode of CH{channel}'].append(stats.mode(Itemp[Itemp!=0], axis = None)[0])
-                dictionary[f'median of CH{channel}'].append(np.median(Itemp[Itemp!=0]))
-                dictionary[f'entropy of CH{channel}'].append(shannon_entropy(Itemp[Itemp!=0]))
+                dictionary[f'mean of CH{channel}'] = []
+                dictionary[f'std of CH{channel}'] = []
+                dictionary[f'mode of CH{channel}'] = []
+                dictionary[f'median of CH{channel}'] = []
+                dictionary[f'entropy of CH{channel}'] = []
+            
+            # Preparing data to be saved on 'name.csv'
+            for n in range(0, numb):
+                dictionary['width'].append(n*width + width/2)
+                for channel in channels:
+                    # Since Python starts with '0', we subtracts '1' from the channel
+                    Itemp = I[:, :, channel-1]*I5[n]*Imask
+                    dictionary[f'mean of CH{channel}'].append(Itemp[Itemp!=0].mean())
+                    dictionary[f'std of CH{channel}'].append(Itemp[Itemp!=0].std())
+                    dictionary[f'mode of CH{channel}'].append(stats.mode(Itemp[Itemp!=0], axis = None)[0])
+                    dictionary[f'median of CH{channel}'].append(np.median(Itemp[Itemp!=0]))
+                    dictionary[f'entropy of CH{channel}'].append(shannon_entropy(Itemp[Itemp!=0]))
+            
+            df = pd.DataFrame(dictionary, columns = list(dictionary.keys()))
+            
+        else:
+            # Creating the dictionary to save the raw ata
+            dictionary = {}
+            for channel in channels:
+                dictionary[f'CH{channel}'] = {}
+                for n in range(0, numb):
+                    # Since Python starts with '0', we subtracts '1' from the channel
+                    Itemp = I[:, :, channel-1]*I5[n]*Imask
+                    # `Ravel` is used to flatten the image (make it a long vec-
+                    # tor). Below we have considered 2 masks, the isoarea one
+                    # (I5[n]), and the final mask that the user choose (Imask)
+                    Iflat = Itemp.ravel()
+                    Imask_flat = Imask.ravel() * I5[n].ravel()
+                    Itemp = Iflat[Imask_flat!=0]
+                    # To save into a JSON file, we have to convert it to list
+                    dictionary[f'CH{channel}'][f'layer_{n+1}'] = Itemp.tolist()
         
         # Entering folder 'results' and saving the data to 'name.csv'
         os.chdir(folder)
         path = 'results'
-        if os.path.exists(path) is not True:
+        if not os.path.exists(path):
             os.mkdir(path)
         os.chdir(path)
         # Actually saving the data
-        df = pd.DataFrame(dictionary, columns = list(dictionary.keys()))
         name = name.split('.')[0]
-        df.to_csv(f'{name}.csv', index = False)
+        if not raw_data:
+            # Saving the data into CSV (for a small size data (only statistcs))
+            df.to_csv(f'{name}.csv', index = False)
+        else:
+            # Saving data into a JSON file (big data with multiple pixels)
+            with open(f'{name}.json', 'w') as f:
+                json.dump(dictionary, f, indent=4)
     
     # Returning the dictionary
     return dictionary
