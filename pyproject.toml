@@ -23,8 +23,8 @@ dependencies = [
     "matplotlib",
     "scipy",
     "pandas",
+    "scikit-image",
     "pynput",
-    "pandas",
     "tifffile",
     "openpyxl"
 ]

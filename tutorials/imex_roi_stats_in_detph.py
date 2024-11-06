@@ -85,6 +85,12 @@ pixel_size : float or integer (default = 1.0)
 show : boolean
     Choose 'True' to visualize each image processed, with its isoareas.
 
+raw_data : boolean
+    If `raw_data = True`, the raw data from all pixels will be returned,
+    instead of the statistics. Also the `JSON` file will be saved,
+    containing the raw data, which is the intensity of each pixel, for each
+    channel. Note that it can be a heavy file.
+
 Returns (Outputs)
 -----------------
 dictionary : dictionary
