@@ -39,10 +39,13 @@ from scipy.interpolate import splprep, splev
 from scipy.ndimage import center_of_mass
 # from scipy.optimize import curve_fit
 from skimage.measure import shannon_entropy
+from skimage.measure import profile_line
 from pynput import keyboard   # It does not worked on Google Colab
 import winsound               # To perform 'beep' sounds, only works on Windows
 # import datetime
 import json
+import csv
+
 
 
 def list_folders(directory):
@@ -75,7 +78,7 @@ def list_folders(directory):
 def list_images(directory):
     '''
     Function to list all images inside a folder
-
+    
     Parameters
     ----------
     directory : string
@@ -85,6 +88,8 @@ def list_images(directory):
     -------
     folders : list
         A list with all the images inside the folder.
+    
+    image_names = imfun.list_images(directory)
     '''
     # First we eliminate problems of commands with "\" (e.g. "\n", "\t", etc.)
     bytes_string = directory.encode('unicode_escape')
@@ -541,625 +546,6 @@ def im2flat(image, **kwargs):
 
 
 
-class im2label_class(object):
-    '''This is the class helps 'im2label' function.
-    '''
-    def __init__(self):
-        self.done = False       # True when we finish the polygon
-        self.current = (0, 0)   # Current position of mouse
-        self.points = []        # The chosen vertex points
-    
-    # This function defines what happens when a mouse event take place.
-    def mouse_actions(self, event, x, y, buttons, parameters):
-        # If polygon has already done, return from this function
-        if self.done:
-            return
-        # Update the mouse current position (to draw a 'plus symbol' in image).
-        elif event == cv2.EVENT_MOUSEMOVE:
-            self.current = (x, y)
-        # Left buttom pressed indicate a new point added to 'points' .
-        elif event == cv2.EVENT_LBUTTONDOWN:
-            self.points.append((x, y))
-        # Right buttom pressed indicate the end of the choose, so 'done = True'
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            self.done = True
-    
-    # This function is to really 'run' the 'choose_points1' class:
-    def run(self, image, label, cmap, w, h, color, **kwargs):
-        # Reading kwargs if any
-        label_name = kwargs.get('label_name')
-        # Stating a window_name for opencv
-        if label_name:
-            window_name = 'Choose a region for the ' + label_name + ' label'
-        else:
-            window_name = 'Choose a region for label ' + str(label)
-        
-        # Separating if we use or not a colormap.
-        if cmap is not None:
-            image_c = cv2.applyColorMap(image, cmap)
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-            cv2.imshow(window_name, image_c)
-            cv2.waitKey(1)
-        else:
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-            image_c = image.copy()
-            cv2.imshow(window_name, image_c)
-            cv2.waitKey(1)
-        # function to make the window with name 'window_name' starts
-        # to interact with the user by mouse, acording 'self.mouse_actions'
-        cv2.setMouseCallback(window_name, self.mouse_actions)
-        
-        # Defining thickness based on image size (to lines in image)
-        if w > 500:
-            thickness = int(w/500)
-        else:
-            thickness = 1
-        
-        # loop to draw the lines while we are choosing the polygon vertices
-        while(not self.done):
-            # make a copy to draw the working line
-            # THIS COPY OF ORIGINAL IMAGE FORCE THAT ONLY ONE RECTANGLE BE
-            # DRAWN IN EACH IMAGE PLOT. Try to comment and see what happens.
-            image2 = image_c.copy()
-            # Creating the zoom in figure, we used 2*int because int(w/3) can
-            # be different from 2*int(w/6).
-            zoom_in = np.zeros([2*int(h/6), 2*int(w/6), 3], np.uint8)
-            
-            # If at least 1 point was chosen, draw the polygon and the working
-            # line. We use cv2.imshow to constantly show a new image with the
-            # vertices already drawn and the updated working line
-            if (len(self.points) > 0):
-                # Writing lines in big figure
-                cv2.polylines(image2, np.array([self.points]), False, color,
-                              thickness)
-                cv2.line(image2, self.points[-1], self.current, color,
-                         thickness)
-                if self.current[1]-int(h/6) < 0:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[int(h/6)-self.current[1]:,int(w/6)-self.current[0]:,:] = image2[0:self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[int(h/6)-self.current[1]:,0:int(w/6)+w-self.current[0],:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[int(h/6)-self.current[1]:,:,:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                elif self.current[1]+int(h/6) > h:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[0:int(h/6)+h-self.current[1],int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[0:int(h/6)+h-self.current[1],0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[0:int(h/6)+h-self.current[1],:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                else:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[:,int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[:,0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                
-                # Making a 'cross' signal to help choosing region
-                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
-                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
-                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
-                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
-
-                # Transforming 'zoom_in' is a zoom (it is a crop right now)
-                h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
-                zoom_in = cv2.resize(zoom_in[int(h_z/2)-int(h_z/4):int(h_z)-int(h_z/4), int(w_z/2)-int(w_z/4):int(w_z)-int(w_z/4)], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
-                image2[0:2*int(h/6),w-2*int(w/6):w]=zoom_in
-                cv2.imshow(window_name, image2)
-            else:
-                if self.current[1]-int(h/6) < 0:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[int(h/6)-self.current[1]:,int(w/6)-self.current[0]:,:] = image2[0:self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[int(h/6)-self.current[1]:,0:int(w/6)+w-self.current[0],:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[int(h/6)-self.current[1]:,:,:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                elif self.current[1]+int(h/6) > h:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[0:int(h/6)+h-self.current[1],int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[0:int(h/6)+h-self.current[1],0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[0:int(h/6)+h-self.current[1],:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                else:
-                    if self.current[0]-int(w/6) < 0:
-                        zoom_in[:,int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
-                    elif self.current[0]+int(w/6) > w:
-                        zoom_in[:,0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
-                    else:
-                        zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
-                # Making a 'cross' signal to help choosing region
-                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
-                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
-                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
-                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
-
-                # Transforming 'zoom_in' is a zoom (it is a crop right now)
-                h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
-                zoom_in = cv2.resize(zoom_in[int(h_z/2)-int(h_z/4):int(h_z)-int(h_z/4), int(w_z/2)-int(w_z/4):int(w_z)-int(w_z/4)], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
-                image2[0:2*int(h/6),w-2*int(w/6):w]=zoom_in
-                cv2.imshow(window_name, image2)
-            k = cv2.waitKey(50) & 0xFF
-            if k == 27:
-                self.done = True
-        cv2.destroyWindow(window_name)
-        return self.points
-
-
-
-def im2label(root, classes, **kwargs):
-    '''Function to create label images (or masks) from images in a folder.
-    
-    This function creates another folder, with the same name as `root` plus the
-    string "labels", and saves the label images in this folder with the same
-    name of original images. Since labeling takes a lot of time, this function
-    can also identifies which images were alredy labeled before starting. The
-    final output image is scaled between 0 to 255, which can be changed by
-    setting `scale=False`. (TODO:enhance document., say about classes+1 or background)
-    
-    Example:
-    --------
-    images = im2label(root, classes, show = True)
-    
-    Parameters
-    ----------
-    root : str
-        Root directory where the images are located.
-    
-    classes : int
-        The number of classes to choose.
-    
-    **kwargs : 
-        Additional arguments to control various options:
-        
-        - save_images : bool (default: True)
-            Choose if the label images will be saved in a folder. By default,
-            the images are saved in a folder with the same name as `root` but
-            adding 'labels' at the end of its name.
-        
-        - open_roi : str (default: None)
-            If open_roi is not `None`, the algorithm chooses open regions (re-
-            gions that end at the image boundary). If `open_roi` = 'above', the
-            chosen region will be an open region above the selected area, the
-            opposite happens if `open_roi` = 'below', with a region below the
-            chosen points.
-        
-        - scale : bool (default: True)
-            If True, the label images will be scaled between 0 and 256. The sa-
-            ved labels/classes will be, e.g., 0, 127, and 255 in the case of 3
-            classes. If scale=False, the images will be labeled with integer
-            numbers, like 0, 1, and 2 in the case of 3 classes. In this case,
-            the saved images might appear almost black in the folder.
-        
-        - label_names : list (default: None)
-            A list of strings with the names of the labels to be shown during
-            the interaction with the user.
-        
-        - cmap : int (cv2 colormap, default: None)
-            Optional colormap to apply to the image.
-        
-        - show : bool (default: False)
-            If True, shows the final image and its label until the user presses
-            'ESC' or any key.
-        
-        - equalize : bool (default: False)
-            If True, equalizes the grayscale image histogram.
-        
-        - color : tuple (default: (200, 200, 200))
-            Enter a different color to color the working line (R, G, B) with
-            values from 0 to 255.
-    
-    Return
-    ------
-    images : list
-        A list with the labeled images, all of `numpy.ndarray` type.
-    
-    Mouse actions:
-    - Left button: select a new point in the label;
-    - Right button: end selection and finish or go to another label;
-    - ESC: finish selection (close the algorithm).
-    
-    Notes:
-    ------
-    - When using `open_roi`, it is only possible to choose points from the left
-      part of the image to the right.
-    - The remaining unlabeled pixels will be set as background pixels (they
-      will belong to the last label). If a label is chosen more than once, the
-      last chosen label will be applied.
-    - Images can be multidimensional (`[height, width, dimensions]`).
-    '''
-    # Adding 1 will allow the user to be able to choose the number of classes
-    # he entered, and to consider an aditiona class for the background (zero)
-    classes = int(classes+1)
-    # With 'kwargs' we can define extra arguments as input.
-    save_images = kwargs.get('save_images', True)
-    cmap = kwargs.get('cmap')
-    open_roi = kwargs.get('open_roi')
-    show = kwargs.get('show')
-    equalize = kwargs.get('equalize')
-    color = kwargs.get('color')
-    scale = kwargs.get('scale')
-    label_names = kwargs.get('label_names')
-    
-    # If no color was chosen, choose gray:
-    color = (200, 200, 200) if color==None else color
-
-    # First, we create a folder with name ´root´+ ' labels', to save results,
-    # but only if the user choose to save the images (if save_images==True):
-    if save_images:
-        os.chdir(root)
-        os.chdir('..')
-        basename = os.path.basename(os.path.normpath(root))
-        # If folder has been already created, the use of try prevent error output
-        try: os.mkdir(basename+' labels')
-        except: pass
-        os.chdir(basename+' labels')
-        # Verify if folder has some already labaled images, if yes, skip the 
-        # labeled ones
-        image_names = list_images(root)
-        if os.listdir(os.curdir):
-            for name in os.listdir(os.curdir):
-                if name in image_names:
-                    image_names.remove(name)
-    else:
-        image_names = list_images(root)
-    
-    # Shuffling the names. Very important when all images in the dataset are
-    # almost equal, like for OCT.
-    shuffle(image_names)
-    
-    # Next few lines create colors to be shown to the user as labels. The while
-    # loop is used to ensure that none of the labels are null or equal to any
-    # other label. Each line of the 'colors' vector is the values of the RGB
-    # channels (that will be multiplied by 127 to be in the range 0-255)
-    equal_lines = True
-    null_lines = True
-    count = 0
-    while equal_lines==True or null_lines==True:
-        colors = np.random.randint(0, 3, size=(classes, 3))
-        # Checking if there are equal lines
-        equal_lines = np.any(np.triu(np.all(colors[:, None, :]==colors, axis=2), 1))
-        # Checking if one of the lines is null
-        null_lines = np.any(np.all(colors == 0, axis=1))
-        if count > 50:
-            break
-        count += 1
-    
-    # Variable with labeled images to return from the function
-    images = []
-    # This for will iterate in each image in 'root' folder
-    for image_name in image_names:
-        image = cv2.imread(os.path.join(root, image_name), cv2.IMREAD_COLOR)
-        # Equalizing histogram
-        if equalize == True:
-            cv2.equalizeHist(image, image)
-        # First the label image will be a '-1' array
-        label_image = np.full(image.shape, -1)
-        # Image width and higher
-        w = np.shape(image)[1]
-        h = np.shape(image)[0]
-        # Iterate in each label (except the last one, that is background)
-        label = 1
-        while label < classes:
-            # The '.run' class gives the chosen points
-            im2label = im2label_class()
-            # If user choose names for labels, send the names to 'run' function
-            if label_names:
-                points = im2label.run(image, label, cmap, w, h, color,
-                                      label_name=label_names[label-1])
-            else:
-                points = im2label.run(image, label, cmap, w, h, color)
-            points = np.asarray(points)
-            # If no points were chosen, gives the option to label the unchosen
-            # points in the image as background
-            if len(points)<1:
-                q1 = 'Label unchosen points as background?'
-                q2 = '\n\n\'No\' will quit application (an error will eventually raise).'
-                # Answer: asw = 6 (yes), asw = 7 (no) 
-                asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
-                if asw == 6:
-                    break
-            # Creating a ROI to signaling the chosen region with '1'
-            roi = np.zeros_like(image)
-            # First we run when roi regions are closed (open_roi == None)
-            if not open_roi:
-                cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
-            
-            # If 'above' or 'below' are choosen, then run the following
-            elif open_roi == 'above' or open_roi == 'below':
-                # If ROI is 'above', concatenate the upper image part, but
-                # if the user choose points near to the sides, concatenate
-                # the side last side points. Same to 'below'.
-                if points[0,0] > h - points[0,1]: # DOWN-X
-                    if w - points[-1,0] > h - points[-1,1]: # DOWN-DOWN
-                        points[0,1] = h
-                        points[-1,1] = h
-                        if open_roi == 'above':
-                            start_points = np.array([[w,h],[w,0],[0,0],[0,h]])
-                        elif open_roi == 'below':
-                            start_points = None
-                    elif w - points[-1,0] > points[-1,1]: # DOWN-UP
-                        points[0,1] = h
-                        points[-1,1] = 0
-                        if open_roi == 'above':
-                            start_points = np.array([[0,0],[0,h]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,0],[w,h]])
-                    else: # DOWN-RIGHT
-                        points[0,1] = h
-                        points[-1,0] = w
-                        if open_roi == 'above':
-                            start_points = np.array([[w,0],[0,0],[0,h]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,h]])
-                            
-                elif points[0,0] > points[0,1]: # UP-X
-                    if w - points[-1,0] > h - points[-1,1]: # UP-DOWN
-                        points[0,1] = 0
-                        points[-1,1] = h
-                        if open_roi == 'above':
-                            start_points = np.array([[w,h],[w,0]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[0,h],[0,0]])
-                    elif w - points[-1,0] > points[-1,1]: # UP-UP
-                        points[0,1] = 0
-                        points[-1,1] = 0
-                        if open_roi == 'above':
-                            start_points = None
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,0],[w,h],[0,h],[0,0]])
-                    else: # UP-RIGHT
-                        points[0,1] = 0
-                        points[-1,0] = w
-                        if open_roi == 'above':
-                            start_points = np.array([[w,0]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,h],[0,h],[0,0]])
-                else: # LEFT-X
-                    if w - points[-1,0] > h - points[-1,1]: # LEFT-DOWN
-                        points[0,0] = 0
-                        points[-1,1] = h
-                        if open_roi == 'above':
-                            start_points = np.array([[w,h],[w,0],[0,0]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[0,h]])
-                    elif w - points[-1,0] > points[-1,1]: # LEFT-UP
-                        points[0,0] = 0
-                        points[-1,1] = 0
-                        if open_roi == 'above':
-                            start_points = np.array([[0,0]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,0],[w,h],[0,h]])
-                    else: # LEFT-RIGHT
-                        points[0,0] = 0
-                        points[-1,0] = w
-                        if open_roi == 'above':
-                            start_points = np.array([[w,0],[0,0]])
-                        elif open_roi == 'below':
-                            start_points = np.array([[w,h],[0,h]])
-                
-                if start_points is not None:
-                    points = np.concatenate((start_points,points), axis=0)
-                cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
-            else:
-                raise ValueError('\nvariable \'open_roi\' has to be \'above\' or \'below\'')
-            # Ask if the label was currectly chosen:
-            if label_names:
-                q1 = 'Was ' + label_names[label-1] + ' label correctly chosen?'
-            else:
-                q1 = 'Was label ' + str(label) + ' correctly chosen?'
-            q2 = '\n\nSelect \'No\' to redo the labeling \n\n\'Yes\': to go forward..'
-            # Answer: asw = 6 (yes), asw = 7 (no) 
-            asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
-            if asw == 6:
-                # Writing 'label' chosen in 'label_image' variable
-                label_image[roi==1] = label
-                # If is interesting to only change where there are no other
-                # labels assigned, use another condition as follows:
-                # label_image[(roi==1) & (label_image==-1)] = label
-                
-                # Drawing the ROI in the original image
-                mask = np.zeros_like(roi)
-                mask[..., 0] = int(colors[label, 0]*255/2)
-                mask[..., 1] = int(colors[label, 1]*255/2)
-                mask[..., 2] = int(colors[label, 2]*255/2)
-                roi2draw = roi*mask
-                image = cv2.addWeighted(image, 1, roi2draw.astype('uint8'), 0.4, 0)
-                
-            # Ask if the user wants to choose more parts to the same label
-            if label_names:
-                q1 = 'Want to choose more points for the ' + label_names[label-1] + ' label?'
-            else:
-                q1 = 'Want to choose more points for label ' + str(label) + '?'
-            q2 = '\n\nSelect \'No\' to continue.. \n\n\'Yes\': to select more labels.'
-            # Answer: asw = 6 (yes), asw = 7 (no) 
-            asw = ctypes.windll.user32.MessageBoxW(0, q1+q2,"Pergunta", 4)
-            if asw == 7:
-                label += 1
-        
-        # Assigning the last label as background (label = 0).
-        label_image[label_image==-1] = 0
-        label_image = np.array(label_image[..., 0], np.uint8)
-        if scale:
-            label_image = scale255(label_image)
-        # If 'show' = True
-        if show:
-            fig, ax = plt.subplots(1,2)
-            # To change from BGR (used by OpenCV) to RGB we used "::-1"
-            ax[0].imshow(image[:,:,::-1])
-            ax[0].axis('off')
-            ax[0].set_title('Reference Image')
-            ax[1].imshow(label_image, vmax=np.max(label_image), vmin=np.min(label_image), cmap = 'viridis')
-            ax[1].axis('off')
-            ax[1].set_title('Labeled Image')
-            fig.tight_layout()
-        # Adding final label image in 'label_images', if 'save_images=True'
-        if save_images:
-            cv2.imwrite(image_name, label_image)
-        images.append(label_image)
-    print('\nAll the images were labeled')
-    
-    return images
-
-
-
-class improfile_class(object):
-    '''This is a class to help improfile function (choose polygonal ROI)
-    
-    Read 'improfile' function for more informations.
-    '''
-    def __init__(self):
-        self.done = False       # True when we finish the polygon
-        self.current = (0, 0)   # Current position of mouse
-        self.points = []        # The chosen vertex points
-    
-    # This function defines what happens when a mouse event take place.
-    def mouse_actions(self, event, x, y, buttons, parameters):
-        # If polygon has already done, return from this function
-        if self.done:
-            return
-        # Update the mouse current position (to draw a line from last vertexn)
-        elif event == cv2.EVENT_MOUSEMOVE:
-            self.current = (x, y)
-        # Left buttom pressed indicate a new vertex, so we add this to 'points' 
-        elif event == cv2.EVENT_LBUTTONDOWN:
-            self.points.append((x, y))
-        # Right buttom pressed indicate the end of drawing, so 'done = True'
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            self.done = True
-    
-    # This function is to really 'run' the polyroi function
-    def run(self, image, cmap, window_name, img_type, show):
-        # If there is no a window name chose, apply the standard one.
-        if window_name is None:
-            window_name = "Choose a polygonal ROI"
-        # Separating if we use or not a colormap.
-        if cmap is not None:
-            image_c = cv2.applyColorMap(image, cmap)
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-            cv2.imshow(window_name, image_c)
-            cv2.waitKey(1)
-        else:
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-            image_c = image.copy()
-            cv2.imshow(window_name, image_c)
-            cv2.waitKey(1)
-        # function to make the window with name 'window_name' starts
-        # to interact with the user by mouse, acording 'self.mouse_actions'
-        cv2.setMouseCallback(window_name, self.mouse_actions)
-        
-        # Defining thickness based on image size (to lines in image)
-        image2 = image_c.copy()
-        if np.shape(image2)[0] > 350:
-            thickness = int(np.shape(image_c.copy())[0]/350)
-        else:
-            thickness = 1
-        
-        # loop to draw the lines while we are choosing the polygon vertices
-        while(not self.done):
-            # make a copy to draw the working line
-            # THIS COPY OF ORIGINAL IMAGE FORCE THAT ONLY ONE RECTANGLE BE
-            # DRAWN IN EACH IMAGE PLOT. Try to comment and see what happens.
-            image2 = image_c.copy()
-            
-            # If at least 1 point was chosen, draw the polygon and the working
-            # line. We use cv2.imshow to constantly show a new image with the
-            # vertices already drawn and the updated working line
-            if (len(self.points) > 0):
-                cv2.polylines(image2, np.array([self.points]), False,
-                              (200,200,200), thickness)
-                cv2.line(image2, self.points[-1], self.current,
-                         (200,200,200), thickness)
-                cv2.imshow(window_name, image2)
-            k = cv2.waitKey(50) & 0xFF
-            if k == 27 or len(self.points) > 2:
-                self.done = True
-        length = np.hypot(self.points[0][0]-self.points[1][0],
-                          self.points[0][1]-self.points[1][1])
-        
-        X = np.array(np.linspace(self.points[0][0],self.points[1][0],int(length)), int)
-        Y = np.array(np.linspace(self.points[0][1],self.points[1][1],int(length)), int)
-        profile = image2[X, Y]
-        # When leaving loop, draw the polygon IF at least a point was chosen
-        if (len(self.points) > 0):
-            image3 = image.copy()
-            cv2.polylines(image3, np.array([self.points]),False,(200,200,200))
-        
-        if show is not None:
-            cv2.imshow(window_name, image3)
-        
-        return profile, self.points, window_name
-
-
-
-def improfile(image, **kwargs):
-    '''Find the profile of pixels intensity between two points in an image
-    
-    [profile, points_out] = improfile(image, **cmap, **window_name, **show)
-    
-    image: the input image
-    points_in: input points to perform the profiling (if the points are already
-    obtained).
-    cmap: Chose the prefered colormap. If 'None', image in grayscale.
-          Some colormap exemples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV,
-          cv2.COLORMAP_PARULA, cv2.COLORMAP_JET, cv2.COLORMAP_RAINBOW, etc.
-    window_name: choose a window name if you want to
-    show: if True, it shows the image with the chosen polygon drawn
-    profile: the output profile chosen
-    points_out: the chosen vertices
-    
-    left buttom: select a new vertex
-    right buttom: finish the vertex selection
-    ESC: finish the function
-    
-    With this function it is possible to choose a polygonal ROI
-    (region of interest) using the mouse. Use the left button to 
-    choose te vertices and the right button to finish selection.
-    
-    **The arguments with double asteristic are optional (**kwargs).
-    '''
-    profileclass = improfile_class()
-    
-    # With 'kwargs' we can define extra arguments that the user can input.
-    cmap = kwargs.get('cmap')
-    window_name = kwargs.get('window_name')
-    show = kwargs.get('show')
-    
-    # Discovering the image type [color (img_type1 = 3) or gray (img_type1=2)]
-    img_type1 = len(np.shape(image))
-    if img_type1 == 2:
-        img_type = 'gray'
-    else:
-        img_type = 'color'
-    
-    # 'profileclass.run' actually run the program we need.
-    [profile, points, window_name] = profileclass.run(image, cmap,
-                                                  window_name, img_type, show)
-    cv2.waitKey(500)    # To wait a little for the user to see the chosen ROI.
-    cv2.destroyWindow(window_name)
-
-    # to modify function:
-    # # Next we find the profile. If points are already passed, just find the
-    # # profile, if not, fint the points and profile with 'profileclass' class
-    # if points_in is None:
-    #     # 'profileclass.run' actually run the program we need.
-    #     [profile, points, window_name] = profileclass.run(image, cmap,
-    #                                                   window_name, img_type, show)
-    #     cv2.waitKey(500)    # To wait a little for the user to see the chosen ROI.
-    #     cv2.destroyWindow(window_name)
-    # else:
-    #     length = np.hypot(self.points[0][0]-self.points[1][0],
-    #                       self.points[0][1]-self.points[1][1])
-        
-    #     X = np.array(np.linspace(self.points[0][0],self.points[1][0],int(length)), int)
-    #     Y = np.array(np.linspace(self.points[0][1],self.points[1][1],int(length)), int)
-    #     profile = image2[X, Y]
-    
-    return profile, np.asarray(points)
-
-
-
 def scale255(image):
     '''
     Function to scale the image to the range [0,255]
@@ -1200,6 +586,149 @@ def scale255(image):
     image = np.array(image, np.uint8)
     
     return image
+
+
+
+class profile_class(object):
+    '''This is a class to help `choose_line` function
+    
+    Read 'choose_line' function for more informations.
+    '''
+    def __init__(self):
+        self.done = False       # True when we finish the polygon
+        self.current = (0, 0)   # Current position of mouse
+        self.points = []        # The choosen vertex points
+    
+    # This function defines what happens when a mouse event take place.
+    def mouse_actions(self, event, x, y, buttons, parameters):
+        # If polygon has already done, return from this function
+        if self.done:
+            return
+        # Update the mouse current position (to draw a line from last vertexn)
+        elif event == cv2.EVENT_MOUSEMOVE:
+            self.current = (x, y)
+        # Left buttom pressed indicate a new vertex, so we add this to 'points' 
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            self.points.append((x, y))
+        # Right buttom pressed indicate the end of drawing, so 'done = True'
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.done = True
+    
+    # This function is to really 'run' the polyroi function
+    def run(self, image, cmap, window_name, img_type, show):
+        # If there is no a window name chose, apply the standard one.
+        if window_name is None:
+            window_name = "Choose a two points to form a line!"
+        # Separating if we use or not a colormap.
+        if cmap is not None:
+            image_c = cv2.applyColorMap(image, cmap)
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.imshow(window_name, image_c)
+            cv2.waitKey(1)
+        else:
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            image_c = image.copy()
+            cv2.imshow(window_name, image_c)
+            cv2.waitKey(1)
+        # function to make the window with name 'window_name' starts
+        # to interact with the user by mouse, acording 'self.mouse_actions'
+        cv2.setMouseCallback(window_name, self.mouse_actions)
+        
+        # Defining thickness based on image size (to lines in image)
+        if np.shape(image_c)[0] > 500:
+            thickness = int(np.shape(image_c)[0]/500)
+        else:
+            thickness = 1
+        
+        # loop to draw the lines while we are choosing the polygon vertices
+        while len(self.points) < 2:
+            # make a copy to draw the working line
+            # THIS COPY OF ORIGINAL IMAGE FORCE THAT ONLY ONE RECTANGLE BE
+            # DRAWN IN EACH IMAGE PLOT.
+            image2 = image_c.copy()
+            
+            # If at least 1 point was chosen, draw the polygon and the working
+            # line. We use cv2.imshow to constantly show a new image with the
+            # vertices already drawn and the updated working line
+            if (len(self.points) > 0):
+                cv2.line(image2, self.points[-1], self.current,
+                         (200,200,200), thickness)
+                cv2.imshow(window_name, image2)
+            k = cv2.waitKey(50) & 0xFF
+            if k == 27:
+                self.done = True
+        
+        # When leaving loop, draw the polygon IF at least a point was chosen
+        if (len(self.points) > 0):
+            image3 = image.copy()
+            cv2.fillPoly(image3, np.array([self.points]), (255,255,255))
+            image4 = np.zeros(np.shape(image3), np.uint8)
+            cv2.fillPoly(image4, np.array([self.points]), (255,255,255))
+        
+        if show is not None:
+            cv2.imshow(window_name, image3)
+        
+        return self.points, window_name
+
+
+
+def improfile(image, **kwargs):
+    '''Find the profile of pixels intensity between two points in an image
+    
+    [profile, points_out] = improfile(image, **cmap, **window_name, **show)
+    
+    image: the input image
+    points_in: input points to perform the profiling (if the points are already
+    obtained).
+    cmap: Chose the prefered colormap. If 'None', image in grayscale.
+          Some colormap exemples: cv2.COLORMAP_PINK, cv2.COLORMAP_HSV,
+          cv2.COLORMAP_PARULA, cv2.COLORMAP_JET, cv2.COLORMAP_RAINBOW, etc.
+    window_name: choose a window name if you want to
+    show: if True, it shows the image with the chosen polygon drawn
+    profile: the output profile chosen
+    points_out: the chosen vertices
+    
+    left buttom: select a new vertex
+    right buttom: finish the vertex selection
+    ESC: finish the function
+    
+    With this function it is possible to choose a polygonal ROI
+    (region of interest) using the mouse. Use the left button to 
+    choose te vertices and the right button to finish selection.
+    
+    **The arguments with double asteristic are optional (**kwargs).
+    '''
+    profile = profile_class()
+    
+    # With 'kwargs' we can define extra arguments that the user can input.
+    cmap = kwargs.get('cmap')
+    window_name = kwargs.get('window_name')
+    show = kwargs.get('show')
+    
+    # Discovering the image type [color (img_type1 = 3) or gray (img_type1 =2)]
+    img_type1 = len(np.shape(image))
+    if img_type1 == 2:
+        img_type = 'gray'
+    else:
+        img_type = 'color'
+    
+    # 'policlass.run' actually run the program we need.
+    [points, window_name] = profile.run(image, cmap, window_name,
+                                                      img_type, show)
+    
+    # Finding the profile
+    profile = profile_line(image, points[0][::-1], points[1][::-1])
+    
+    cv2.waitKey(500)    # To wait a little for the user to see the chosen ROI.
+    cv2.destroyWindow(window_name)
+    
+    return profile, points
+
+
+
+#%%############################
+### ROI Selection Functions ###
+###############################
 
 
 
@@ -1258,7 +787,7 @@ class polyroi1(object):
         while(not self.done):
             # make a copy to draw the working line
             # THIS COPY OF ORIGINAL IMAGE FORCE THAT ONLY ONE RECTANGLE BE
-            # DRAWN IN EACH IMAGE PLOT. Try to comment and see what happens.
+            # DRAWN IN EACH IMAGE PLOT.
             image2 = image_c.copy()
             
             # If at least 1 point was chosen, draw the polygon and the working
@@ -1865,6 +1394,672 @@ def crop_poly_multiple(images, **kwargs):
 
 
 
+#%%###################################
+### AI - Labeling Data from Images ###
+######################################
+
+
+
+class label_image_seg_class(object):
+    '''This is the class helps 'label_image_segments' function.
+    '''
+    def __init__(self):
+        self.done = False       # True when we finish the polygon
+        self.current = (0, 0)   # Current position of mouse
+        self.points = []        # The chosen vertex points
+    
+    # This function defines what happens when a mouse event take place.
+    def mouse_actions(self, event, x, y, buttons, parameters):
+        # If polygon has already done, return from this function
+        if self.done:
+            return
+        # Update the mouse current position (to draw a 'plus symbol' in image).
+        elif event == cv2.EVENT_MOUSEMOVE:
+            self.current = (x, y)
+        # Left buttom pressed indicate a new point added to 'points' .
+        elif event == cv2.EVENT_LBUTTONDOWN:
+            self.points.append((x, y))
+        # Right buttom pressed indicate the end of the choose, so 'done = True'
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.done = True
+    
+    # This function is to really 'run' the 'choose_points1' class:
+    def run(self, image, label, cmap, w, h, color, **kwargs):
+        # Reading kwargs if any
+        label_name = kwargs.get('label_name')
+        # Stating a window_name for opencv
+        if label_name:
+            window_name = 'Choose a region for the ' + label_name + ' label'
+        else:
+            window_name = 'Choose a region for label ' + str(label)
+        
+        # Separating if we use or not a colormap.
+        if cmap is not None:
+            image_c = cv2.applyColorMap(image, cmap)
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.imshow(window_name, image_c)
+            cv2.waitKey(1)
+        else:
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            image_c = image.copy()
+            cv2.imshow(window_name, image_c)
+            cv2.waitKey(1)
+        # function to make the window with name 'window_name' starts
+        # to interact with the user by mouse, acording 'self.mouse_actions'
+        cv2.setMouseCallback(window_name, self.mouse_actions)
+        
+        # Defining thickness based on image size (to lines in image)
+        if w > 500:
+            thickness = int(w/500)
+        else:
+            thickness = 1
+        
+        # loop to draw the lines while we are choosing the polygon vertices
+        while(not self.done):
+            # make a copy to draw the working line
+            # THIS COPY OF ORIGINAL IMAGE FORCE THAT ONLY ONE RECTANGLE BE
+            # DRAWN IN EACH IMAGE PLOT. Try to comment and see what happens.
+            image2 = image_c.copy()
+            # Creating the zoom in figure, we used 2*int because int(w/3) can
+            # be different from 2*int(w/6).
+            zoom_in = np.zeros([2*int(h/6), 2*int(w/6), 3], np.uint8)
+            
+            # If at least 1 point was chosen, draw the polygon and the working
+            # line. We use cv2.imshow to constantly show a new image with the
+            # vertices already drawn and the updated working line
+            if (len(self.points) > 0):
+                # Writing lines in big figure
+                cv2.polylines(image2, np.array([self.points]), False, color,
+                              thickness)
+                cv2.line(image2, self.points[-1], self.current, color,
+                         thickness)
+                if self.current[1]-int(h/6) < 0:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[int(h/6)-self.current[1]:,int(w/6)-self.current[0]:,:] = image2[0:self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[int(h/6)-self.current[1]:,0:int(w/6)+w-self.current[0],:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[int(h/6)-self.current[1]:,:,:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                elif self.current[1]+int(h/6) > h:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[0:int(h/6)+h-self.current[1],int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[0:int(h/6)+h-self.current[1],0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[0:int(h/6)+h-self.current[1],:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                else:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[:,int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[:,0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                
+                # Making a 'cross' signal to help choosing region
+                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
+                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
+                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
+                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
+
+                # Transforming 'zoom_in' is a zoom (it is a crop right now)
+                h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
+                zoom_in = cv2.resize(zoom_in[int(h_z/2)-int(h_z/4):int(h_z)-int(h_z/4), int(w_z/2)-int(w_z/4):int(w_z)-int(w_z/4)], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
+                image2[0:2*int(h/6),w-2*int(w/6):w]=zoom_in
+                cv2.imshow(window_name, image2)
+            else:
+                if self.current[1]-int(h/6) < 0:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[int(h/6)-self.current[1]:,int(w/6)-self.current[0]:,:] = image2[0:self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[int(h/6)-self.current[1]:,0:int(w/6)+w-self.current[0],:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[int(h/6)-self.current[1]:,:,:] = image2[0:self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                elif self.current[1]+int(h/6) > h:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[0:int(h/6)+h-self.current[1],int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[0:int(h/6)+h-self.current[1],0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[0:int(h/6)+h-self.current[1],:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6)+int(h/6)-h+self.current[1],self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                else:
+                    if self.current[0]-int(w/6) < 0:
+                        zoom_in[:,int(w/6)-self.current[0]:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),0:self.current[0]+int(w/6),:]
+                    elif self.current[0]+int(w/6) > w:
+                        zoom_in[:,0:int(w/6)+w-self.current[0],:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):w,:]
+                    else:
+                        zoom_in[:,:,:] = image2[self.current[1]-int(h/6):self.current[1]+int(h/6),self.current[0]-int(w/6):self.current[0]+int(w/6),:]
+                # Making a 'cross' signal to help choosing region
+                zoom_in[int(h/6),int(4*w/30):int(19*w/120)] = np.uint8(zoom_in[int(h/6),int(4*w/30):int(19*w/120)]+125)
+                zoom_in[int(h/6),int(21*w/120):int(6*w/30)] = np.uint8(zoom_in[int(h/6),int(21*w/120):int(6*w/30)]+125)
+                zoom_in[int(4*h/30):int(19*h/120),int(w/6)] = np.uint8(zoom_in[int(4*h/30):int(19*h/120),int(w/6)]+125)
+                zoom_in[int(21*h/120):int(6*h/30),int(w/6)] = np.uint8(zoom_in[int(21*h/120):int(6*h/30),int(w/6)]+125)
+
+                # Transforming 'zoom_in' is a zoom (it is a crop right now)
+                h_z, w_z = np.shape(zoom_in)[0],  np.shape(zoom_in)[1]
+                zoom_in = cv2.resize(zoom_in[int(h_z/2)-int(h_z/4):int(h_z)-int(h_z/4), int(w_z/2)-int(w_z/4):int(w_z)-int(w_z/4)], None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
+                image2[0:2*int(h/6),w-2*int(w/6):w]=zoom_in
+                cv2.imshow(window_name, image2)
+            k = cv2.waitKey(50) & 0xFF
+            if k == 27:
+                self.done = True
+        cv2.destroyWindow(window_name)
+        return self.points
+
+
+
+def label_image_segments(root, classes, **kwargs):
+    '''Function to create label images (or masks) from images in a folder.
+    
+    This function creates another folder, with the same name as `root` plus the
+    string "labels", and saves the label images in this folder with the same
+    name of original images. Since labeling takes a lot of time, this function
+    can also identifies which images were alredy labeled before starting. The
+    final output image is scaled between 0 to 255, which can be changed by
+    setting `scale=False`. (TODO:enhance document., say about classes+1 or background)
+    
+    Example:
+    --------
+    images = label_image_segments(root, classes, show = True)
+    
+    Parameters
+    ----------
+    root : str
+        Root directory where the images are located.
+    
+    classes : int
+        The number of classes to choose.
+    
+    **kwargs : 
+        Additional arguments to control various options:
+        
+        - save_images : bool (default: True)
+            Choose if the label images will be saved in a folder. By default,
+            the images are saved in a folder with the same name as `root` but
+            adding 'labels' at the end of its name.
+        
+        - open_roi : str (default: None)
+            If open_roi is not `None`, the algorithm chooses open regions (re-
+            gions that end at the image boundary). If `open_roi` = 'above', the
+            chosen region will be an open region above the selected area, the
+            opposite happens if `open_roi` = 'below', with a region below the
+            chosen points.
+        
+        - scale : bool (default: True)
+            If True, the label images will be scaled between 0 and 256. The sa-
+            ved labels/classes will be, e.g., 0, 127, and 255 in the case of 3
+            classes. If scale=False, the images will be labeled with integer
+            numbers, like 0, 1, and 2 in the case of 3 classes. In this case,
+            the saved images might appear almost black in the folder.
+        
+        - label_names : list (default: None)
+            A list of strings with the names of the labels to be shown during
+            the interaction with the user.
+        
+        - cmap : int (cv2 colormap, default: None)
+            Optional colormap to apply to the image.
+        
+        - show : bool (default: False)
+            If True, shows the final image and its label until the user presses
+            'ESC' or any key.
+        
+        - equalize : bool (default: False)
+            If True, equalizes the grayscale image histogram.
+        
+        - color : tuple (default: (200, 200, 200))
+            Enter a different color to color the working line (R, G, B) with
+            values from 0 to 255.
+    
+    Return
+    ------
+    images : list
+        A list with the labeled images, all of `numpy.ndarray` type.
+    
+    Mouse actions:
+    - Left button: select a new point in the label;
+    - Right button: end selection and finish or go to another label;
+    - ESC: finish selection (close the algorithm).
+    
+    Notes:
+    ------
+    - When using `open_roi`, it is only possible to choose points from the left
+      part of the image to the right.
+    - The remaining unlabeled pixels will be set as background pixels (they
+      will belong to the last label). If a label is chosen more than once, the
+      last chosen label will be applied.
+    - Images can be multidimensional (`[height, width, dimensions]`).
+    '''
+    # Adding 1 will allow the user to be able to choose the number of classes
+    # he entered, and to consider an aditiona class for the background (zero)
+    classes = int(classes+1)
+    # With 'kwargs' we can define extra arguments as input.
+    save_images = kwargs.get('save_images', True)
+    cmap = kwargs.get('cmap')
+    open_roi = kwargs.get('open_roi')
+    show = kwargs.get('show')
+    equalize = kwargs.get('equalize')
+    color = kwargs.get('color')
+    scale = kwargs.get('scale')
+    label_names = kwargs.get('label_names')
+    
+    # If no color was chosen, choose gray:
+    color = (200, 200, 200) if color==None else color
+
+    # First, we create a folder with name ´root´+ ' labels', to save results,
+    # but only if the user choose to save the images (if save_images==True):
+    if save_images:
+        os.chdir(root)
+        os.chdir('..')
+        basename = os.path.basename(os.path.normpath(root))
+        # If folder has been already created, the use of try prevent error output
+        try: os.mkdir(basename+' labels')
+        except: pass
+        os.chdir(basename+' labels')
+        # Verify if folder has some already labaled images, if yes, skip the 
+        # labeled ones
+        image_names = list_images(root)
+        if os.listdir(os.curdir):
+            for name in os.listdir(os.curdir):
+                if name in image_names:
+                    image_names.remove(name)
+    else:
+        image_names = list_images(root)
+    
+    # Shuffling the names. Very important when all images in the dataset are
+    # almost equal, like in OCT (Optical Coherence Tomography).
+    shuffle(image_names)
+    
+    # Next few lines create colors to be shown to the user as labels. The while
+    # loop is used to ensure that none of the labels are null or equal to any
+    # other label. Each line of the 'colors' vector is the values of the RGB
+    # channels (that will be multiplied by 127 to be in the range 0-255)
+    equal_lines = True
+    null_lines = True
+    count = 0
+    while equal_lines==True or null_lines==True:
+        colors = np.random.randint(0, 3, size=(classes, 3))
+        # Checking if there are equal lines
+        equal_lines = np.any(np.triu(np.all(colors[:, None, :]==colors, axis=2), 1))
+        # Checking if one of the lines is null
+        null_lines = np.any(np.all(colors == 0, axis=1))
+        if count > 50:
+            break
+        count += 1
+    
+    # Variable with labeled images to return from the function
+    images = []
+    # This for will iterate in each image in 'root' folder
+    for image_name in image_names:
+        image = cv2.imread(os.path.join(root, image_name), cv2.IMREAD_COLOR)
+        # Equalizing histogram
+        if equalize == True:
+            cv2.equalizeHist(image, image)
+        # First the label image will be a '-1' array
+        label_image = np.full(image.shape, -1)
+        # Image width and higher
+        w = np.shape(image)[1]
+        h = np.shape(image)[0]
+        # Iterate in each label (except the last one, that is background)
+        label = 1
+        while label < classes:
+            # The '.run' class gives the chosen points
+            label_seg_class = label_image_seg_class()
+            # If user choose names for labels, send the names to 'run' function
+            if label_names:
+                points = label_seg_class.run(image, label, cmap, w, h, color,
+                                             label_name=label_names[label-1])
+            else:
+                points = label_seg_class.run(image, label, cmap, w, h, color)
+            points = np.asarray(points)
+            # If no points were chosen, gives the option to label the unchosen
+            # points in the image as background
+            if len(points)<1:
+                q1 = 'Label unchosen points as background?'
+                q2 = '\n\n\'No\' will quit application (an error will eventually raise).'
+                # Answer: asw = 6 (yes), asw = 7 (no) 
+                asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
+                if asw == 6:
+                    break
+            # Creating a ROI to signaling the chosen region with '1'
+            roi = np.zeros_like(image)
+            # First we run when roi regions are closed (open_roi == None)
+            if not open_roi:
+                cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
+            
+            # If 'above' or 'below' are choosen, then run the following
+            elif open_roi == 'above' or open_roi == 'below':
+                # If ROI is 'above', concatenate the upper image part, but
+                # if the user choose points near to the sides, concatenate
+                # the side last side points. Same to 'below'.
+                if points[0,0] > h - points[0,1]: # DOWN-X
+                    if w - points[-1,0] > h - points[-1,1]: # DOWN-DOWN
+                        points[0,1] = h
+                        points[-1,1] = h
+                        if open_roi == 'above':
+                            start_points = np.array([[w,h],[w,0],[0,0],[0,h]])
+                        elif open_roi == 'below':
+                            start_points = None
+                    elif w - points[-1,0] > points[-1,1]: # DOWN-UP
+                        points[0,1] = h
+                        points[-1,1] = 0
+                        if open_roi == 'above':
+                            start_points = np.array([[0,0],[0,h]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,0],[w,h]])
+                    else: # DOWN-RIGHT
+                        points[0,1] = h
+                        points[-1,0] = w
+                        if open_roi == 'above':
+                            start_points = np.array([[w,0],[0,0],[0,h]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,h]])
+                            
+                elif points[0,0] > points[0,1]: # UP-X
+                    if w - points[-1,0] > h - points[-1,1]: # UP-DOWN
+                        points[0,1] = 0
+                        points[-1,1] = h
+                        if open_roi == 'above':
+                            start_points = np.array([[w,h],[w,0]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[0,h],[0,0]])
+                    elif w - points[-1,0] > points[-1,1]: # UP-UP
+                        points[0,1] = 0
+                        points[-1,1] = 0
+                        if open_roi == 'above':
+                            start_points = None
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,0],[w,h],[0,h],[0,0]])
+                    else: # UP-RIGHT
+                        points[0,1] = 0
+                        points[-1,0] = w
+                        if open_roi == 'above':
+                            start_points = np.array([[w,0]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,h],[0,h],[0,0]])
+                else: # LEFT-X
+                    if w - points[-1,0] > h - points[-1,1]: # LEFT-DOWN
+                        points[0,0] = 0
+                        points[-1,1] = h
+                        if open_roi == 'above':
+                            start_points = np.array([[w,h],[w,0],[0,0]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[0,h]])
+                    elif w - points[-1,0] > points[-1,1]: # LEFT-UP
+                        points[0,0] = 0
+                        points[-1,1] = 0
+                        if open_roi == 'above':
+                            start_points = np.array([[0,0]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,0],[w,h],[0,h]])
+                    else: # LEFT-RIGHT
+                        points[0,0] = 0
+                        points[-1,0] = w
+                        if open_roi == 'above':
+                            start_points = np.array([[w,0],[0,0]])
+                        elif open_roi == 'below':
+                            start_points = np.array([[w,h],[0,h]])
+                
+                if start_points is not None:
+                    points = np.concatenate((start_points,points), axis=0)
+                cv2.fillPoly(roi, [np.asarray(points)], (1, 1, 1))
+            else:
+                raise ValueError('\nvariable \'open_roi\' has to be \'above\' or \'below\'')
+            # Ask if the label was currectly chosen:
+            if label_names:
+                q1 = 'Was ' + label_names[label-1] + ' label correctly chosen?'
+            else:
+                q1 = 'Was label ' + str(label) + ' correctly chosen?'
+            q2 = '\n\nSelect \'No\' to redo the labeling \n\n\'Yes\': to go forward..'
+            # Answer: asw = 6 (yes), asw = 7 (no) 
+            asw = ctypes.windll.user32.MessageBoxW(0,q1+q2,"Pergunta", 4)
+            if asw == 6:
+                # Writing 'label' chosen in 'label_image' variable
+                label_image[roi==1] = label
+                # If is interesting to only change where there are no other
+                # labels assigned, use another condition as follows:
+                # label_image[(roi==1) & (label_image==-1)] = label
+                
+                # Drawing the ROI in the original image
+                mask = np.zeros_like(roi)
+                mask[..., 0] = int(colors[label, 0]*255/2)
+                mask[..., 1] = int(colors[label, 1]*255/2)
+                mask[..., 2] = int(colors[label, 2]*255/2)
+                roi2draw = roi*mask
+                image = cv2.addWeighted(image, 1, roi2draw.astype('uint8'), 0.4, 0)
+                
+            # Ask if the user wants to choose more parts to the same label
+            if label_names:
+                q1 = 'Want to choose more points for the ' + label_names[label-1] + ' label?'
+            else:
+                q1 = 'Want to choose more points for label ' + str(label) + '?'
+            q2 = '\n\nSelect \'No\' to continue.. \n\n\'Yes\': to select more labels.'
+            # Answer: asw = 6 (yes), asw = 7 (no) 
+            asw = ctypes.windll.user32.MessageBoxW(0, q1+q2,"Pergunta", 4)
+            if asw == 7:
+                label += 1
+        
+        # Assigning the last label as background (label = 0).
+        label_image[label_image==-1] = 0
+        label_image = np.array(label_image[..., 0], np.uint8)
+        if scale:
+            label_image = scale255(label_image)
+        # If 'show' = True
+        if show:
+            fig, ax = plt.subplots(1,2)
+            # To change from BGR (used by OpenCV) to RGB we used "::-1"
+            ax[0].imshow(image[:,:,::-1])
+            ax[0].axis('off')
+            ax[0].set_title('Reference Image')
+            ax[1].imshow(label_image, vmax=np.max(label_image), vmin=np.min(label_image), cmap = 'viridis')
+            ax[1].axis('off')
+            ax[1].set_title('Labeled Image')
+            fig.tight_layout()
+        # Adding final label image in 'label_images', if 'save_images=True'
+        if save_images:
+            cv2.imwrite(image_name, label_image)
+        images.append(label_image)
+    print('\nAll the images were labeled')
+    
+    return images
+
+
+
+def label_sequence_points(image_dir, numb_points, numb_seq, **kwargs):
+    '''
+    Interactively labels sequence points on image profiles extracted from a
+    folder of grayscale images.
+    
+    This function loads images from `image_dir`, allows the user to select
+    pixel intensity profiles from each image using a GUI, and then
+    interactively selects specific `numb_points` points on these profiles. The
+    labeled data is saved in a CSV file (`data.csv`), and the algorithm allows
+    the user for running this function repeatedly, and check which images were
+    already labeled before (by checking the `data.csv` file in the `save_dir`
+    folder).
+    
+    Example of use:
+    
+        data = imfun.label_sequence_points(image_dir, 3, 3, save_dir=r'D:\Data\Sequences\OCT')
+    
+    Parameters:
+    -----------
+    image_dir : str
+        Path to the folder containing grayscale images to be labeled.
+    numb_points : int
+        Number of points to select in each intensity profile.
+    numb_seq : int
+        Number of intensity profiles to extract per image.
+    save_dir : str, optional (default=image_dir)
+        Directory where the labeled data (`data.csv`) will be stored.
+    save_data : bool, optional (default=True)
+        Whether to save the labeled data to a CSV file.
+    do_not_shuffle : bool, optional (default=False)
+        If True, keeps image processing order instead of shuffling.
+    
+    Workflow:
+    ---------
+    1. Lists all image files in `image_dir`.
+    2. Removes already labeled images from the list (if `data.csv` exists).
+    3. Randomly shuffles images unless `do_not_shuffle` is set.
+    4. For each image:
+       - Extracts `numb_seq` intensity profiles using `improfile` (user selects a profile line via GUI).
+       - Displays the profile in an interactive plot where the user selects `numb_points` points.
+       - Saves the image name, selected points, and full intensity profile to `data.csv`.
+    
+    Output CSV Format:
+    ------------------
+    The file `data.csv` is structured as follows:
+    
+    | File name | Point 1 | Point 2 | ... | Point N | Profile (remaining columns) |
+    |----------|---------|---------|-----|---------|----------------------------|
+    | img1.png |  15     |  42     | ... |   78    | [pixel intensities]        |
+    | img2.png |  10     |  38     | ... |   72    | [pixel intensities]        |
+    
+    Key Features:
+    -------------
+    - **Prevents re-labeling**: Images already labeled in `data.csv` are skipped.
+    - **Interactive Selection**: Users select both the profile and key points via a GUI.
+    - **Shuffling for fairness**: Randomly processes images unless disabled.
+    - **Flexible saving**: Users can disable CSV saving if needed.
+    
+    Returns:
+    --------
+    data : list
+        A list of labeled data, each entry containing:
+        [image_name, selected_points..., intensity_profile]
+    
+    '''
+    save_dir = kwargs.get('save_dir', image_dir)
+    save_data = kwargs.get('save_data', True)
+    do_not_shuffle = kwargs.get('do_not_shuffle', False)
+    
+    # Listing all names in `image_dir` that are from image files
+    image_names = list_images(image_dir)
+    
+    # Shuffling the names. Very important when all images in the dataset are
+    # almost equal, like in OCT (Optical Coherence Tomography).
+    if not do_not_shuffle:
+        shuffle(image_names)
+    
+    # Defining the class to interact with mouse and return `numb_points` points
+    class InteractivePlot:
+        def __init__(self, data, numb_points):
+            self.data = data
+            self.numb_points = numb_points
+            self.selected_points = []  # Stores selected points (index, value)
+    
+            self.fig, self.ax = plt.subplots()
+            
+            # Plot the data
+            self.ax.plot(self.data, marker='o', linestyle='-', label='1D Data')
+            self.ax.set_title(f'Select {self.numb_points} points')
+            self.ax.set_xlabel('Index')
+            self.ax.set_ylabel('Value')
+            self.ax.legend()
+    
+            # Connect event
+            self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+    
+        def on_click(self, event):
+            '''Handles mouse clicks and selects the nearest index.'''
+            if event.xdata is not None:  # Check if click is inside plot area
+                x_index = int(round(event.xdata))  # Get nearest index
+                
+                if 0 <= x_index < len(self.data):  # Ensure index is within bounds
+                    y_value = self.data[x_index]
+    
+                    # Prevent duplicate selections
+                    if (x_index, y_value) not in self.selected_points:
+                        self.selected_points.append((x_index, y_value))
+                        # Highlight the selected point
+                        self.ax.scatter(x_index, y_value, color='red', s=100, zorder=3)
+                        self.fig.canvas.draw()
+    
+                    # Stop selection once we reach numb_points
+                    if len(self.selected_points) >= self.numb_points:
+                        plt.close(self.fig)  # Close the figure
+    
+        def get_selected_points(self):
+            '''Starts the plot and returns the selected points after selection.'''
+            self.fig.show()
+            plt.pause(0.1)  # Allow GUI to update
+            while len(self.selected_points) < self.numb_points:
+                plt.pause(0.1)  # Keep the event loop alive
+            return self.selected_points  # Return selected points after closing
+    
+    # Create the variable to stack all points of all images
+    data = []
+    # Verify if there are already a "data.csv" file in `save_dir`, and loading
+    # all the data in it to the variable `data`
+    os.chdir(save_dir)
+    try:
+        with open('data.csv', 'r') as file:
+            reader = csv.reader(file)
+            for n, row in enumerate(reader):
+                # The first line is the title, so exclude use the condition:
+                if n > 0:
+                    # Append each row to the data list
+                    data.append(row)
+                    # Since `image_name` can be repeated, we need to use `try`
+                    try:
+                        image_names.remove(row[0])
+                    except:
+                        pass
+            previous_csv = True
+    except:
+        previous_csv = False
+    
+    # Looping into all images into the folder
+    for image_name in image_names:
+        # Importing image
+        image = cv2.imread(os.path.join(image_dir, image_name), cv2.IMREAD_GRAYSCALE)
+        # Acquiring `numb_seq` sequences
+        for seq in range(numb_seq):
+            # Acquiring image profile (interact with user by mouse)
+            profile, _ = improfile(image, window_name=f'Choose the sequence number {seq+1} of {image_name}')
+            # Call the class to capture mouse clicks
+            interactive_plot = InteractivePlot(profile, numb_points)
+            selected_points = interactive_plot.get_selected_points()
+            selected_points = [points[0] for points in selected_points]
+        
+            # Add the `profile` to `selected_points` to form the full data
+            sequence_data = selected_points + profile.tolist()
+            # Add the name to the data (to controle which images were used)
+            sequence_data.insert(0, image_name)
+            # Saving the full data (profile + points) to the `data` list
+            data.append(sequence_data)
+            
+            # For each iamge, save points (columns) of all the past images (rows)
+            # into a CSV file
+            if save_data == True:
+                # Entering the directory to save
+                os.chdir(save_dir)
+                # Open the existing data.csv file in append mode and add the
+                # new line, or open in write mode if there is no data.csv yet
+                if not previous_csv and (image_name == image_names[0]) and (seq == 0):
+                    how_to_open = 'w'
+                else:
+                    how_to_open = 'a'
+                with open('data.csv', how_to_open, newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    if (image_name == image_names[0]) and (seq == 0) and (previous_csv == False):
+                        # Creating the header/title line (first line)
+                        title_row = ['File name']
+                        for m in range(numb_points):
+                            title_row.append(f'Point {m+1}')
+                        title_row.append('Profile (remaining columns)')
+                        writer.writerow(title_row)
+                    writer.writerow(sequence_data)
+    
+    return data
+
+
+
+#%%##############################
+### Image Filtering Functinos ###
+#################################
+
+
+
 def filter_finder(x, y, **kwargs):
     '''
     Function to study which filter to use for a signal f(x) = y
@@ -1872,19 +2067,38 @@ def filter_finder(x, y, **kwargs):
     Input Parameters
     ----------------
     x : 1D numpy.ndarray
-        Variable of f(x) function. It can be, for example, the time in a time-
-        dependent f(x).
+        The independent variable `x` of the f(x) function. It can be time, for
+        example, if the `x` of this function is time.
     y : 1D numpy.ndarray
-        Signal or sequence to be filtered.
-    **kwargs : TYPE
-        DESCRIPTION.
+        Signal (or sequence) to be filtered, which is the `f(x)` or the `y`.
+    
+    Optional Arguments
+    ------------------
+    out_type : string
+        Determines the type of filtering. If out_type = 'frequency', the signal
+        is compared and fitered in the frequency domain. If out_type = 'time',
+        the signal is compared and filtered in the time domain. The `output`
+        will be also changed (see `output` below in Returns for more info.).
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
+    output : tuple
+        Depends on the mode. If mode_type = 'frequency', the return is a tuple
+        `(w, h)`, where `w` are the frequencies at whiwch the `h` is computed,
+        and `h` is the frequency response of the filter (to filter other signal
+        or to be ploted with `plt.plot(np.abs(h))`). If the mode_type = 'time',
+        the return is the tuple `(x, y_filt)`, where `x` is the same as input,
+        and `y_filt` is the filtered signal.
+    show : bool
+        If show = True, prints images comparing the original and filtered
+        signals, also showing the interpolated signal (needed for filtering).
+    
+    N (int) : Number of points in the FFT (standard: 2**10).
+    fs (int) : Sampling frequency (standard: 1).
+    Wn (int) : Critical frequency (below which the signal is filtered)
+        (standard: 0.25). Must be in 0 < Wn < fs/2 (if fs=1.0 --> Wn < 0.5).
+        Decrease for a stronger filter and increase for a weaker filter.
+    order (int) : Filter order (standard: 3).
     
     
     How to Use the Function
@@ -1892,82 +2106,59 @@ def filter_finder(x, y, **kwargs):
     
     output = filter_finder(x, y, **kwargs)
     
-    inputs:
-    show (string): operation mode, to choose what the function will plot. If
-    'time' is chosen, this function compare the original signal with filtered
-    one in the time domain (or in whatherver domain the original signal is). If
-    'frequency' is chosen, the signal and filter spectra are compared. If
-    'interpolation' is chosen, the original signal is compared with the inter-
-    polated one for visualization. Standard value is 'time'.
-    N (int): the number of points to be used in FFT and 'x' interpolation.
-    fs (int): frequency of sampling
-    Wn (int): critical frequency
-    order (int): filter order
-    
-    output:
-    output (tuple): Depends on the mode. If the mode is 'frequency', return w
-    (wavelengths) and h (frequency response, to be ploted e.g. as np.abs(h)).
-    If the mode is 'time', it returns the x and the y for the filtered signal.
-    
-        
-    If show = 'frequency' compare signal and filter in the frequency domain.
-    If show = 'time' compare signal and filtered signal in the time domain.
-    If show = 'interpolation', it compares the true signal with its interpola-
-    tion (to see if interpolation is good for this signal).
     '''
-    N = kwargs.get('N')
-    fs = kwargs.get('fs')
-    Wn = kwargs.get('Wn')
-    order = kwargs.get('order')
-    show = kwargs.get('show')
-    window = kwargs.get('window')
+    out_type = kwargs.get('out_type', 'time')
+    N = kwargs.get('N', 2**10)
+    fs = kwargs.get('fs', 1)
+    Wn = kwargs.get('Wn', 0.25)
+    order = kwargs.get('order', 3)
+    show = kwargs.get('show', True)
+    window = kwargs.get('window', signal.windows.hamming(N))
     
-    if N is None:
-        N = 2**10
-    if fs is None:
-        fs = 1
-    if Wn is None:
-        Wn = 0.25
-    if order is None:
-        order = 5
-    if window is None:
-        window = signal.windows.hamming(N)
-    if show is None:
-        show = 'time'
     # Defining 'T' as 1 over the sampling frequency 'fs'
     T = 1/fs
     # First interpolating the signal
     f = interp1d(x, y)
     x_ip = np.linspace(x[0], x[-1], N, endpoint=True)
     y_ip = f(x_ip)
-    if show == 'interpolation':
+    if show == True:
         plt.subplots()
-        plt.plot(x, y)
-        plt.plot(x_ip, y_ip, 'o')
+        plt.title('Interpolated signal')
+        plt.plot(x, y, label='Original signal')
+        plt.plot(x_ip, y_ip, 'o', label='Interpolated signal')
+        plt.legend()
+        plt.show()
+    
     # Calculating the FFT of the signal y(x)
     y_w = y_ip*window
     yf = fft(y_w)
     yf_log = 20*np.log10(np.abs(yf[0:N//2])/np.max(np.abs(yf[0:N//2])))
     xf = fftfreq(N, T)[:N//2]
+    
     # Plotting the freq. response of the signal y(x)
-    if show == 'frequency':
+    if (out_type == 'frequency') and (show == True):
         plt.subplots()
         plt.plot(xf, yf_log)
+    
     # Calculating the IIR filter for this signal
     sos = signal.iirfilter(order, Wn=Wn, fs=fs, btype='low', ftype='butter',
                            output='sos')
     w, h = signal.sosfreqz(sos, worN=N, fs=fs)
-    if show == 'frequency':
-        plt.plot(w, 20*np.log10(np.abs(h)), label='Filter')
-        plt.show()
+    
+    # Plotting and rutirning according to the `out_type`
+    if out_type == 'frequency':
+        if show == True:
+            plt.plot(w, 20*np.log10(np.abs(h)), label='Filter')
+            plt.show()
         return (w, h)
-    if show == 'time':
+    if out_type == 'time':
         y_filt = signal.sosfiltfilt(sos, y)
-        plt.subplots()
-        plt.plot(x, y, label='Original signal')
-        plt.plot(x, y_filt, label='Filtered signal')
-        plt.legend()
-        plt.show()
+        if show == True:
+            plt.subplots()
+            plt.plot(x, y, label='Original signal')
+            plt.plot(x, y_filt, label='Filtered signal')
+            plt.legend()
+            plt.show()
         return (x, y_filt)
 
 
@@ -2183,15 +2374,21 @@ def filt_hist(hist):
 
 
 
+#%%####################################
+### Statistics from Multiple Images ###
+#######################################
+
+
+
 def imroiprop(I):
-    """Function to get properties of a ROI in a image
+    '''Function to get properties of a ROI in a image
     
     [props, Imask] = imroiprop(I)
     
     props[0]: sum all pixel values in ROI;
     props[1]: mean of non-zero values in ROI;
     props[2]: std of non-zero values in ROI.
-    """
+    '''
     # First we choose a polygonal ROI:
     [Imask, points] = polyroi(I, cmap = cv2.COLORMAP_PINK)
     

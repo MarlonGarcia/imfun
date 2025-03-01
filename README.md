@@ -18,7 +18,12 @@ Library for image pre-processing, with functions to handle and prepare images fo
 
 ### 2. Pre-Processing for Machine Learning and Computer Vision
 
-#### 2.1. ROI and Handling (*Most Important Ones*)
+#### 2.1. Labeling Data from Images
+
+- `label_sequence_points`: label points in profiles/sequences from images (interact with images choosing profiles and points to labeling) *
+- `label_image_segments`: label segments in folders with multiple images (with a GUI to interact with the images, very automated function!) *
+
+#### 2.2. ROI and Handling (*Most Important Ones*)
 
 - `polyroi`: GUI to create a polygonal region of interest (ROI)
 - `crop_image`: GUI to create a rectangular crop in an image
@@ -34,12 +39,11 @@ Library for image pre-processing, with functions to handle and prepare images fo
   <img src="https://raw.githubusercontent.com/MarlonGarcia/imfun/main/media/roi_stats_in_detph.gif" alt="me" width="320" />
 </p>
     
-#### 2.2. Image Alignment and Transformation
+#### 2.3. Image Alignment and Transformation
 
 - `rotate2D`: rotate points by an angle about a center
 - `flat2im`: transforms a flat vector into a 2D image
 - `im2flat`: transforms a 2D image in a flat vector
-- `im2label`: GUI to transform images in labels for image segmentation (very automated function)
 - `scale255`: scales an image to the [0, 255] range
 - `align_features`: Align images with Feature-Based algorithm, from OpenCV (maybe not working)
 - `align_ECC`: image alignment using ECC algorithm from OpenCV (diffuse image)
@@ -74,7 +78,7 @@ Inside the `tutorials` folder there are some examples of using the functions of 
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.8
+pip install image-functions==0.1.9
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
@@ -84,7 +88,7 @@ If you have other versions of this library installed, please remove it first:
 ```
 pip uninstall image-functions
 
-pip install image-functions==0.1.8
+pip install image-functions==0.1.9
 ```
 
 - author: Marlon Rodrigues Garcia
