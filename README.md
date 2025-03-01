@@ -78,7 +78,7 @@ Inside the `tutorials` folder there are some examples of using the functions of 
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.9
+pip install image-functions==0.1.10
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
@@ -88,7 +88,7 @@ If you have other versions of this library installed, please remove it first:
 ```
 pip uninstall image-functions
 
-pip install image-functions==0.1.9
+pip install image-functions==0.1.10
 ```
 
 - author: Marlon Rodrigues Garcia

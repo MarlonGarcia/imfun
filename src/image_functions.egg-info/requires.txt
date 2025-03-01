@@ -3,6 +3,5 @@ opencv-contrib-python
 matplotlib
 scipy
 pandas
-tkinter
 tifffile
 scikit-image
