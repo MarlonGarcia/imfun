@@ -65,7 +65,7 @@ data : list
 '''
 
 # Importing the ImFun library
-import main as imfun
+import imfun
 
 
 # First define the folder where images are (the `r` is used to prevent errors
