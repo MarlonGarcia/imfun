@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: image-functions
-Version: 0.1.8
+Version: 0.1.7
 Summary: Image Processing Functions
 Author-email: Marlon Rodrigues Garcia <marlon.garcia@unesp.br>
 License: MIT License
@@ -42,7 +42,6 @@ Requires-Dist: pandas
 Requires-Dist: pynput
 Requires-Dist: pandas
 Requires-Dist: tifffile
-Requires-Dist: openpyxl
 
 # Image Functions Library
 
@@ -121,7 +120,7 @@ Inside the `tutorials` folder there are some examples of using the functions of 
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.8
+pip install image-functions==0.1.7
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
