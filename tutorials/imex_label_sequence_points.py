@@ -70,14 +70,15 @@ import imfun
 
 # First define the folder where images are (the `r` is used to prevent errors
 # related with the use of slash or backslash) 
-image_dir = r'D:\Data\Images\OCT\2025.02.22 - Luismar - Finger Print - Examples'
+# image_dir = r'D:\Data\Images\OCT\2025.02.22 - Luismar - Finger Print - Examples'
+image_dir = r'C:\Users\marlon.garcia\Meu Drive\College\Biophotonics Lab\Research\Programs\Python\Camera & Image\OCT\2025.02.22 - Find Epidermis and Dermis Width\Imagens PNG'
 
 # Then define where to save the images
-save_dir = r'D:\My Drive\College\Biophotonics Lab\Research\Programs\Python\Camera & Image\OCT\2025.02.22 - Find Epidermis and Dermis Width'
+# save_dir = r'D:\My Drive\College\Biophotonics Lab\Research\Programs\Python\Camera & Image\OCT\2025.02.22 - Find Epidermis and Dermis Width'
 
 
 # Then run the function choosing 3 points in each sequence and 4 sequences for
 # each image. The final data saved will containg the name of the image, the
 # coordinate of 3 points, and 4 profiles chosen by each image:
-data = imfun.label_sequence_points(image_dir, 3, 4, save_dir=save_dir)
+data = imfun.label_sequence_points(image_dir, 3, 3)
 

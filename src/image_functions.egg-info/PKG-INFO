@@ -1,39 +1,16 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: image-functions
-Version: 0.1.10
+Version: 0.1.11
 Summary: Image Processing Functions
 Author-email: Marlon Rodrigues Garcia <marlon.garcia@unesp.br>
-License: MIT License
-        
-        Copyright (c) 2023 Marlon Rodrigues Garcia
-        
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:
-        
-        The above copyright notice and this permission notice shall be included in all
-        copies or substantial portions of the Software.
-        
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-        SOFTWARE.
-        
+License-Expression: MIT
 Project-URL: Homepage, https://github.com/MarlonGarcia/imfun
 Keywords: image processing,digital image,image functions,machine learning data preparation,artificial intelligence data preparation
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python
 Classifier: Programming Language :: Python :: 3
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE
-License-File: LICENSE.rst
 Requires-Dist: numpy
 Requires-Dist: opencv-contrib-python
 Requires-Dist: matplotlib
@@ -41,6 +18,8 @@ Requires-Dist: scipy
 Requires-Dist: pandas
 Requires-Dist: tifffile
 Requires-Dist: scikit-image
+Requires-Dist: natsort
+Dynamic: license-file
 
 # Image Functions Library
 
@@ -122,7 +101,7 @@ Inside the `tutorials` folder there are some examples of using the functions of 
 You can install using `pip`:
 
 ```
-pip install image-functions==0.1.10
+pip install image-functions==0.1.11
 ```
 
 *OBS*: some functions use the 'pynput' and 'windsound' libraries, which may be difficult to install and do not works on non-windows platforms. Comment on these library imports if there are problems during installation or loading.
@@ -132,12 +111,14 @@ If you have other versions of this library installed, please remove it first:
 ```
 pip uninstall image-functions
 
-pip install image-functions==0.1.10
+pip install image-functions==0.1.11
 ```
 
 - author: Marlon Rodrigues Garcia
 - contact: marlon.garcia@unesp.br
 - institution: Sao Paulo State University (Unesp)
+- website1: https://sites.google.com/view/lab-biomedical-optics/
+- website2: https://www.ifsc.usp.br/~prata/php/index.php
 
 
 ### 7. Scientific Research

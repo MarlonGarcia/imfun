@@ -27,8 +27,11 @@ from scipy import stats
 import time
 import ctypes
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox
+except:
+    print("\nThe tkinter library was not imported. Verify if this library is actually installed. This library may not work on some mobile platforms.\n")
 import tifffile as tiff       # To import ".lsm" images
 from random import shuffle
 from scipy import fftpack     # to apply FFT and iFFT
@@ -38,13 +41,25 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import splprep, splev
 from scipy.ndimage import center_of_mass
 # from scipy.optimize import curve_fit
-from skimage.measure import shannon_entropy
-from skimage.measure import profile_line
-from pynput import keyboard   # It does not worked on Google Colab
-import winsound               # To perform 'beep' sounds, only works on Windows
+try:
+    from skimage.measure import shannon_entropy
+    from skimage.measure import profile_line
+except:
+    print("\nThe scikit-image library was not imported. Verify if this library is actually installed. This library may not work on mobile platforms.\n")
+try:
+    from pynput import keyboard   # It does not worked on Google Colab
+except:
+    print("\nThe pynput library was not imported. Verify if this library is actually installed. This library may not work on online and mobile platforms.\n")
+try:
+    import winsound               # To perform 'beep' sounds, only works on Windows
+except:
+    print("\nThe winsound library was not imported. Verify if this library is actually installed (only works on Windows).\n")
 # import datetime
 import json
 import csv
+# lightway library to sort a list (e.g. sort image names with numbers)
+from natsort import natsorted
+
 
 
 
@@ -71,6 +86,8 @@ def list_folders(directory):
         path = os.path.join(directory, item)
         if os.path.isdir(path):
             folders.append(item)
+    # Sorting images alphabetically (natural sort order)
+    folders = natsorted(folders)
     return folders
 
 
@@ -106,6 +123,9 @@ def list_images(directory):
         if os.path.isfile(path):
             if any(item.lower().endswith(ext) for ext in extensions):
                 image_names.append(item)
+    # Sorting images alphabetically (natural sort order)
+    image_names = natsorted(image_names)
+    
     return image_names
 
 
@@ -125,8 +145,10 @@ def load_gray_images(folder, **kwargs):
     # Standard colormap is grayscale
     colormap = kwargs.get('colormap')
     flag1 = cv2.IMREAD_GRAYSCALE
-    # Listing images (usefull for when online drives put files in the folder)
+    # Listing images (usefull when there are non-image files, like in online drives)
     image_names = list_images(folder)
+    # To ensure natural sort order (alphabetically and numerically)
+    image_names = natsorted(image_names)
     if colormap == -1 or colormap == None:
         for filename in image_names:
             img = cv2.imread(os.path.join(folder, filename), flag1)
@@ -143,13 +165,30 @@ def load_gray_images(folder, **kwargs):
 
 
 def load_color_images(folder):
-    """Loading colorful images from 'folder'
-    
-    This function load all colorful images from 'folder' in variable I.
+    """
+    Load all color images from a specified folder.
+
+    This function reads and returns all color images (RGB) from the given
+    directory. It uses natural sorting to ensure that filenames are processed 
+    in human-readable order (e.g., img1, img2, ..., img10).
+
+    Parameters
+    ----------
+    folder : str
+        Path to the folder containing image files.
+
+    Returns
+    -------
+    list of ndarray
+        A list of loaded color images as NumPy arrays.
     """
     I = []
     flag1 = cv2.IMREAD_COLOR
-    for filename in os.listdir(folder):
+    # Listing images (usefull when there are non-image files)
+    image_names = list_images(folder)
+    # To ensure natural sort order (alphabetically and numerically)
+    image_names = natsorted(image_names)
+    for filename in image_names:
         img = cv2.imread(os.path.join(folder, filename), flag1)
         if img is not None:
             I.append(img)
@@ -592,7 +631,8 @@ def scale255(image):
 class profile_class(object):
     '''This is a class to help `choose_line` function
     
-    Read 'choose_line' function for more informations.
+    Read the documentation of 'choose_line' function for more informations.
+    You can use `help(imfun.profile)`
     '''
     def __init__(self):
         self.done = False       # True when we finish the polygon
@@ -705,7 +745,7 @@ def improfile(image, **kwargs):
     window_name = kwargs.get('window_name')
     show = kwargs.get('show')
     
-    # Discovering the image type [color (img_type1 = 3) or gray (img_type1 =2)]
+    # Discovering the image type [color (img_type1 = 3) or gray (img_type1=2)]
     img_type1 = len(np.shape(image))
     if img_type1 == 2:
         img_type = 'gray'
@@ -1651,8 +1691,10 @@ def label_image_segments(root, classes, **kwargs):
         os.chdir('..')
         basename = os.path.basename(os.path.normpath(root))
         # If folder has been already created, the use of try prevent error output
-        try: os.mkdir(basename+' labels')
-        except: pass
+        try:
+            os.mkdir(basename+' labels')
+        except:
+            pass
         os.chdir(basename+' labels')
         # Verify if folder has some already labaled images, if yes, skip the 
         # labeled ones
